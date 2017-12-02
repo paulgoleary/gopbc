@@ -2,29 +2,58 @@ package research
 
 import (
 	"math/big"
+	// "crypto/rand"
 )
 
 type Field interface {
-
 }
 
-type Element struct {
-	MyField Field
-	Data [] big.Int
+/*
+   public CurveField(SecureRandom random, Element a, Element b, BigInteger order, BigInteger cofac, byte[] genNoCofac) {
+       super(random, (F) a.getField());
+
+       this.random = random;
+       this.a = a;
+       this.b = b;
+       this.order = order;
+       this.cofac = cofac;
+
+       initGen(genNoCofac);
+   }
+*/
+
+type CurveField struct {
+	a          ZrElement
+	b          ZrElement
+	order      big.Int
+	cofac      big.Int
+	gen        CurveElement // TODO: not sure here...
+	genNoCofac CurveElement
 }
 
-func (e Element) PowZn( eZn Element ) Element {
+type ZrField struct {
+}
+
+type CurveElement struct {
+}
+
+type ZrElement struct {
+	elemField Field
+	Data      []big.Int
+}
+
+func (e ZrElement) PowZn(eZn ZrElement) ZrElement {
 	return e
 }
 
-var ZERO = big.NewInt(0 )
-var ONE = big.NewInt(1 )
-var TWO = big.NewInt(2 )
+var ZERO = big.NewInt(0)
+var ONE = big.NewInt(1)
+var TWO = big.NewInt(2)
 
 /**
-	This is the mod square-and-multiply algorithm with the sliding window optimization
-	Implemented here with base parameters - ie. independent of fields - because it only applies to scalar values
- */
+This is the mod square-and-multiply algorithm with the sliding window optimization
+Implemented here with base parameters - ie. independent of fields - because it only applies to scalar values
+*/
 func powWindow(base *big.Int, exp *big.Int, mod *big.Int) *big.Int {
 	if exp.Sign() == 0 {
 		return ONE
@@ -90,7 +119,7 @@ func optimalPowWindowSize(exp *big.Int) uint {
 	}
 }
 
-func buildPowWindow( k uint, base *big.Int ) *[]big.Int {
+func buildPowWindow(k uint, base *big.Int) *[]big.Int {
 
 	if k < 1 {
 		return nil
@@ -101,7 +130,7 @@ func buildPowWindow( k uint, base *big.Int ) *[]big.Int {
 
 	lookups[0].Set(ONE)
 	for x := 1; x < lookupSize; x++ {
-		lookups[x].Set(&lookups[x - 1])
+		lookups[x].Set(&lookups[x-1])
 		lookups[x].Mul(&lookups[x], base)
 	}
 

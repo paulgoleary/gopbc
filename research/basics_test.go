@@ -1,9 +1,9 @@
 package research
 
 import (
-	"testing"
-	"math/big"
 	"fmt"
+	"math/big"
+	"testing"
 )
 
 // val secretKeyVal = "276146606970621369032156664792541580771690346936"
@@ -31,4 +31,3 @@ func TestBasicBigness(t *testing.T) {
 
 	fmt.Println(kindaKey.String())
 }
-

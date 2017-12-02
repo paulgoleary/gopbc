@@ -1,10 +1,10 @@
 package research
 
 import (
-	"testing"
 	"math/big"
 	"math/rand"
 	"sort"
+	"testing"
 )
 
 func checkPowWindowBigInt(t *testing.T, testBase, testExp, testMod *big.Int) {
@@ -19,7 +19,7 @@ func checkPowWindow(t *testing.T, testBase, testExp, testMod, expectedVal *big.I
 	}
 }
 
-func makeBigInt( valStr string ) (res *big.Int) {
+func makeBigInt(valStr string) (res *big.Int) {
 	res = new(big.Int)
 	res.SetString(valStr, 10)
 	return
@@ -35,11 +35,11 @@ func makeRandBigInt() (res *big.Int) {
 
 // TODO: maybe already implemented for big.Int?
 type BigInts []*big.Int
-type SortBigInts struct { BigInts }
+type SortBigInts struct{ BigInts }
 
-func (bi BigInts) Len() int      { return len(bi) }
-func (bi BigInts) Swap(i, j int) { bi[i], bi[j] = bi[j], bi[i] }
-func (bi BigInts ) Less(i, j int) bool { return bi[i].Cmp(bi[j]) < 0 }
+func (bi BigInts) Len() int           { return len(bi) }
+func (bi BigInts) Swap(i, j int)      { bi[i], bi[j] = bi[j], bi[i] }
+func (bi BigInts) Less(i, j int) bool { return bi[i].Cmp(bi[j]) < 0 }
 
 func TestPowWindow(t *testing.T) {
 
@@ -51,9 +51,9 @@ func TestPowWindow(t *testing.T) {
 		makeBigInt("3"),
 		makeBigInt("346147755795474257120521634428450035879485727536"),
 		makeBigInt("730750818665451621361119245571504901405976559617"),
-		makeBigInt("162545157220080657869228973848821629858076108602") )
+		makeBigInt("162545157220080657869228973848821629858076108602"))
 
-	for i := 0; i < 10 * 1000; i++ {
+	for i := 0; i < 10*1000; i++ {
 		// TODO: generator in Go?
 		testVals := []*big.Int{makeRandBigInt(), makeRandBigInt(), makeRandBigInt()}
 		sort.Sort(SortBigInts{testVals})
