@@ -2,49 +2,7 @@ package research
 
 import (
 	"math/big"
-	// "crypto/rand"
 )
-
-type Field interface {
-}
-
-/*
-   public CurveField(SecureRandom random, Element a, Element b, BigInteger order, BigInteger cofac, byte[] genNoCofac) {
-       super(random, (F) a.getField());
-
-       this.random = random;
-       this.a = a;
-       this.b = b;
-       this.order = order;
-       this.cofac = cofac;
-
-       initGen(genNoCofac);
-   }
-*/
-
-type CurveField struct {
-	a          ZrElement
-	b          ZrElement
-	order      big.Int
-	cofac      big.Int
-	gen        CurveElement // TODO: not sure here...
-	genNoCofac CurveElement
-}
-
-type ZrField struct {
-}
-
-type CurveElement struct {
-}
-
-type ZrElement struct {
-	elemField Field
-	Data      []big.Int
-}
-
-func (e ZrElement) PowZn(eZn ZrElement) ZrElement {
-	return e
-}
 
 var ZERO = big.NewInt(0)
 var ONE = big.NewInt(1)
