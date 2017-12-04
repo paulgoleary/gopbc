@@ -17,8 +17,8 @@ type PairingParameters map[string]string
 // TODO!
 type BasePairing struct {
 	// protected SecureRandom random;
-	G1, G2, GT field.CurveField
-	Zr field.ZrField
+	G1, G2, GT *field.CurveField
+	Zr *field.ZrField
 	// protected PairingMap pairingMap;
 }
 

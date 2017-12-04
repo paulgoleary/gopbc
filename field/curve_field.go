@@ -17,24 +17,52 @@ import "math/big"
 */
 
 type CurveField struct {
-	a          ZrElement
-	b          ZrElement
-	order      big.Int
-	cofac      big.Int
-	gen        CurveElement // TODO: not sure here...
-	genNoCofac CurveElement
+	a          *ZrElement
+	b          *ZrElement
+	order      *big.Int
+	cofactor   *big.Int
+	gen        *CurveElement // TODO: not sure here...
+	genNoCofac *CurveElement
 }
 
 type CurveElement struct {
-	ElemField CurveField
+	ElemField *CurveField
 	DataX     big.Int
 	DataY     big.Int
 }
 
 // CurveField
 
-func MakeCurveField() CurveField {
-	field := new(CurveField)
+// TODO: JPBC (PBC?) handles case w/o bytes and cofactor
+func (field *CurveField) initGenFromBytes( genNoCofac *[]byte ) {
 
-	return *field
+	// TODO !!!
+	// field.genNoCofac = field.newElementFromBytes(genNoCofac);
+	// field.gen = field.genNoCofac.duplicate().mul(this.cofac);
+}
+
+/*
+        // Remember the curve is: y^2 = x^3 + ax
+        return new CurveField<Field>(random,
+                                     Fq.newOneElement(),   // a
+                                     Fq.newZeroElement(),  // b
+                                     r,                    // order
+                                     h,                    // cofactor  (r*h)=q+1=#E(F_q)
+                                     genNoCofac);
+ */
+func MakeCurveField(
+	a *ZrElement,
+	b *ZrElement,
+	order *big.Int,
+	cofactor *big.Int,
+	genNoCofacBytes *[]byte ) *CurveField {
+
+	field := new(CurveField)
+	field.a = a
+	field.b = b
+	field.order = order
+	field.cofactor = cofactor
+	field.initGenFromBytes(genNoCofacBytes)
+
+	return field
 }

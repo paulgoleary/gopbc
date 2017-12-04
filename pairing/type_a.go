@@ -14,16 +14,17 @@ type TypeAPairingParams struct {
 	r          *big.Int // r = 2^exp2 + sign1 * 2^exp1 + sign0 * 1
 	q          *big.Int // we work in E(F_q) (and E(F_q^2))
 	h          *big.Int // r * h = q + 1
-	genNoCofac *[]byte
+	genNoCofacBytes *[]byte
 }
 
 type TypeAPairing struct {
 	TypeAPairingParams
 	BasePairing
+	Fq	*field.ZrField
 }
 
-func (pairing *TypeAPairing) initTypeAPairingParams(params PairingParameters) {
-	pairingType := params["type"]
+func (pairing *TypeAPairing) initTypeAPairingParams(params *PairingParameters) {
+	pairingType := (*params)["type"]
 	if pairingType != aType {
 		panic(fmt.Sprintf("Invalid pairing type '%s' - expected 'a'", pairingType))
 	}
@@ -37,7 +38,7 @@ func (pairing *TypeAPairing) initTypeAPairingParams(params PairingParameters) {
 	pairing.h = params.getBigInt("h") // r * h = q + 1
 
 	// TODO: need to test that this decodes in the same way as PBC, jPBC, etc.
-	pairing.genNoCofac = params.getBytes("genNoCofac", nil)
+	pairing.genNoCofacBytes = params.getBytes("genNoCofac", nil)
 }
 
 // TODO: compatibility with jPBC and PBC ???
@@ -45,7 +46,7 @@ const (
 	NAF_MILLER_PROJECTTIVE_METHOD = "naf-miller-projective"
 )
 
-func (pairing *TypeAPairing) initTypeAPairingMap(params PairingParameters) {
+func (pairing *TypeAPairing) initTypeAPairingMap(params *PairingParameters) {
 	method := params.getString("method", NAF_MILLER_PROJECTTIVE_METHOD)
 	println(fmt.Sprintf("CURRENTLY NOT IMPLEMENTED!: %s", method)) // TODO!!!
 }
@@ -66,17 +67,21 @@ func (pairing *TypeAPairing) initTypeAPairingMap(params PairingParameters) {
    }
 */
 
-// TODO!!!
-func (pairing TypeAPairing) makeEq() field.CurveField {
-	return *new(field.CurveField)
+func (pairing *TypeAPairing) makeEq() *field.CurveField {
+	return field.MakeCurveField(
+		pairing.Fq.NewOneElement(),
+		pairing.Fq.NewZeroElement(),
+		pairing.r,
+		pairing.h,
+		pairing.genNoCofacBytes )
 }
 
-func (pairing TypeAPairing) initTypeAPairingFields(params PairingParameters) {
+func (pairing *TypeAPairing) initTypeAPairingFields(params *PairingParameters) {
 	// Init Zr
-	// Zr = initFp(r);
+	pairing.Zr = field.MakeZrField(pairing.r)
 
 	// Init Fq
-	// Fq = initFp(q);
+	pairing.Fq = field.MakeZrField(pairing.q)
 
 	// TODO: any reason to have Eq ?
 	// Init Eq
@@ -94,7 +99,7 @@ func (pairing TypeAPairing) initTypeAPairingFields(params PairingParameters) {
 	// GT = initGT();
 }
 
-func MakeTypeAPairing(params PairingParameters) *TypeAPairing {
+func MakeTypeAPairing(params *PairingParameters) *TypeAPairing {
 	pairing := new(TypeAPairing)
 	pairing.initTypeAPairingParams(params)
 	pairing.initTypeAPairingMap(params)

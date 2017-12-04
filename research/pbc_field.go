@@ -1,12 +1,9 @@
 package research
 
 import (
+	"gobdc/field"
 	"math/big"
 )
-
-var ZERO = big.NewInt(0)
-var ONE = big.NewInt(1)
-var TWO = big.NewInt(2)
 
 /**
 This is the mod square-and-multiply algorithm with the sliding window optimization
@@ -14,7 +11,7 @@ Implemented here with base parameters - ie. independent of fields - because it o
 */
 func powWindow(base *big.Int, exp *big.Int, mod *big.Int) *big.Int {
 	if exp.Sign() == 0 {
-		return ONE
+		return field.ONE
 	}
 
 	k := optimalPowWindowSize(exp)
@@ -86,7 +83,7 @@ func buildPowWindow(k uint, base *big.Int) *[]big.Int {
 	lookupSize := 1 << k
 	lookups := make([]big.Int, lookupSize)
 
-	lookups[0].Set(ONE)
+	lookups[0].Set(field.ONE)
 	for x := 1; x < lookupSize; x++ {
 		lookups[x].Set(&lookups[x-1])
 		lookups[x].Mul(&lookups[x], base)

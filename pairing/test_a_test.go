@@ -1,10 +1,11 @@
-package research
+package pairing
 
 import (
-	"gobdc/pairing"
+	"testing"
+	"fmt"
 )
 
-func getCompatParams() (params pairing.PairingParameters) {
+func getCompatParams() *PairingParameters {
 
 	/*
 	   *** this is now actually *also* cribbed from the bdc project ...
@@ -19,7 +20,7 @@ func getCompatParams() (params pairing.PairingParameters) {
 	   sign0 1
 	*/
 
-	params = pairing.PairingParameters{}
+	params := PairingParameters{}
 	params["type"] = "a"
 	params["q"] = "8780710799663312522437781984754049815806883199414208211028653399266475630880222957078625179422662221423155858769582317459277713367317481324925129998224791"
 	params["r"] = "730750818665451621361119245571504901405976559617"
@@ -31,5 +32,12 @@ func getCompatParams() (params pairing.PairingParameters) {
 
 	params["genNoCofac"] = "WLeuxaO0DxaW+oJ4vrLKgkq91prZNLGQUVoXH4gIx6AGIS7vrU7Fq3/5DfYTRHfpnOCIuo96hfRwTzUTf2+EUndlGtVaI05vjWxsIaCqKSPtq+xYpr0jaGVVwnXojhjbi0AeR/JvjiIaF9WFjSRzqEvR1WHp0LkJRrtBfNcA0k4="
 
-	return
+	return &params
+}
+
+// func MakeTypeAPairing(params *PairingParameters) *TypeAPairing {
+func TestPowWindow(t *testing.T) {
+	pairingParms := getCompatParams()
+	pairing := MakeTypeAPairing(pairingParms)
+	println(fmt.Sprintf("Successfully made type A pairing: %T", pairing))
 }

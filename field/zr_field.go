@@ -5,12 +5,12 @@ import (
 )
 
 type ZrField struct {
-	FieldOrder	big.Int
+	FieldOrder	*big.Int
 }
 
 type ZrElement struct {
-	ElemField ZrField
-	Data      big.Int
+	ElemField *ZrField
+	Data      *big.Int
 }
 
 // ZrElement
@@ -23,6 +23,20 @@ func (e ZrElement) PowZn(eZn ZrElement) ZrElement {
 
 func MakeZrField( fieldOrder *big.Int ) *ZrField {
 	zrField := new(ZrField)
-	zrField.FieldOrder = *fieldOrder
+	zrField.FieldOrder = fieldOrder
 	return zrField
+}
+
+func (field *ZrField) NewOneElement() *ZrElement {
+	elem := new(ZrElement)
+	elem.ElemField = field
+	elem.Data = ONE
+	return elem
+}
+
+func (field *ZrField) NewZeroElement() *ZrElement {
+	elem := new(ZrElement)
+	elem.ElemField = field
+	elem.Data = ZERO
+	return elem
 }
