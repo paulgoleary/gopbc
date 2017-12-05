@@ -1,8 +1,10 @@
 package pairing
 
 import (
-	"testing"
 	"fmt"
+	"gobdc/field"
+	"math/big"
+	"testing"
 )
 
 func getCompatParams() *PairingParameters {
@@ -35,9 +37,29 @@ func getCompatParams() *PairingParameters {
 	return &params
 }
 
+func testPoint(t *testing.T, thePoint field.Point, strExpectX string, strExpectY string) {
+
+	checkCoord := func(cmp *big.Int, expString string) {
+		expInt := big.Int{}
+		expInt.SetString(expString, 10)
+		if expInt.Cmp(cmp) != 0 {
+			t.Errorf("Wrong value for point coord comparision, got: %s, want: %s.", cmp.String(), expString)
+		}
+	}
+	checkCoord(thePoint.X(), strExpectX)
+	checkCoord(thePoint.Y(), strExpectY)
+}
+
 // func MakeTypeAPairing(params *PairingParameters) *TypeAPairing {
-func TestPowWindow(t *testing.T) {
+func TestMakeTypeAPairing(t *testing.T) {
 	pairingParms := getCompatParams()
 	pairing := MakeTypeAPairing(pairingParms)
+
+	// test compatibility with PBC
+	// TODO: move to a more explicit compat test?
+	testPoint(t, pairing.G1.GetGen(),
+		"7852334875614213225969535005319230321249629225894318783946607976937179571030765324627135523985138174020408497250901949150717492683934959664497943409406486",
+		"8189589736511278424487290408486860952887816120897672059241649987466710766123126805204101070682864313793496226965335026128263318306025907120292056643404206")
+
 	println(fmt.Sprintf("Successfully made type A pairing: %T", pairing))
 }

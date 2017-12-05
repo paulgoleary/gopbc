@@ -9,3 +9,17 @@ var TWO = big.NewInt(2)
 type Field interface {
 }
 
+// TODO: not sure if I want/like/need this ...?
+type Element interface {
+	Copy() Element
+}
+
+type BaseField struct {
+	LengthInBytes int
+}
+
+type Point interface {
+	X() *big.Int
+	Y() *big.Int
+}
+

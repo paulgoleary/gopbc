@@ -1,11 +1,11 @@
 package pairing
 
 import (
-	"strconv"
-	"math/big"
 	"encoding/base64"
 	"fmt"
 	"gobdc/field"
+	"math/big"
+	"strconv"
 )
 
 const (
@@ -18,7 +18,7 @@ type PairingParameters map[string]string
 type BasePairing struct {
 	// protected SecureRandom random;
 	G1, G2, GT *field.CurveField
-	Zr *field.ZrField
+	Zr         *field.ZrField
 	// protected PairingMap pairingMap;
 }
 
@@ -57,4 +57,3 @@ func (params PairingParameters) getString(paramName string, defaultVal string) s
 	}
 	return paramVal
 }
-

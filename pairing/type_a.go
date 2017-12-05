@@ -1,26 +1,26 @@
 package pairing
 
 import (
-	"math/big"
 	"fmt"
 	"gobdc/field"
+	"math/big"
 )
 
 type TypeAPairingParams struct {
-	exp2       int
-	exp1       int
-	sign1      int
-	sign0      int
-	r          *big.Int // r = 2^exp2 + sign1 * 2^exp1 + sign0 * 1
-	q          *big.Int // we work in E(F_q) (and E(F_q^2))
-	h          *big.Int // r * h = q + 1
+	exp2            int
+	exp1            int
+	sign1           int
+	sign0           int
+	r               *big.Int // r = 2^exp2 + sign1 * 2^exp1 + sign0 * 1
+	q               *big.Int // we work in E(F_q) (and E(F_q^2))
+	h               *big.Int // r * h = q + 1
 	genNoCofacBytes *[]byte
 }
 
 type TypeAPairing struct {
 	TypeAPairingParams
 	BasePairing
-	Fq	*field.ZrField
+	Fq *field.ZrField
 }
 
 func (pairing *TypeAPairing) initTypeAPairingParams(params *PairingParameters) {
@@ -73,7 +73,7 @@ func (pairing *TypeAPairing) makeEq() *field.CurveField {
 		pairing.Fq.NewZeroElement(),
 		pairing.r,
 		pairing.h,
-		pairing.genNoCofacBytes )
+		pairing.genNoCofacBytes)
 }
 
 func (pairing *TypeAPairing) initTypeAPairingFields(params *PairingParameters) {
@@ -106,4 +106,3 @@ func MakeTypeAPairing(params *PairingParameters) *TypeAPairing {
 	pairing.initTypeAPairingFields(params)
 	return pairing
 }
-
