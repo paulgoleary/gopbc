@@ -9,11 +9,11 @@ import (
 This is the mod square-and-multiply algorithm with the sliding window optimization
 Implemented here with base parameters - ie. independent of fields - because it only applies to scalar values
 */
+
 func powWindow(base *big.Int, exp *big.Int, mod *big.Int) *big.Int {
 	if exp.Sign() == 0 {
 		return field.ONE
 	}
-
 	k := optimalPowWindowSize(exp)
 	lookups := buildPowWindow(k, base)
 
