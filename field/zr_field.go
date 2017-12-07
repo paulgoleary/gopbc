@@ -6,7 +6,7 @@ import (
 
 type ZrField struct {
 	BaseField
-	FieldOrder	*big.Int
+	FieldOrder *big.Int
 }
 
 type ZrElement struct {
@@ -22,7 +22,7 @@ func (e ZrElement) PowZn(eZn ZrElement) ZrElement {
 
 // ZrField
 
-func MakeZrField( fieldOrder *big.Int ) *ZrField {
+func MakeZrField(fieldOrder *big.Int) *ZrField {
 	zrField := new(ZrField)
 	zrField.FieldOrder = fieldOrder
 	zrField.LengthInBytes = fieldOrder.BitLen() / 8 // TODO: generalize ???

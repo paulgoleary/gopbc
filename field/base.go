@@ -6,12 +6,14 @@ var ZERO = big.NewInt(0)
 var ONE = big.NewInt(1)
 var TWO = big.NewInt(2)
 
+var BI_ZERO = MakeBigInt(0)
+
 type Field interface {
 }
 
 type Element interface {
 	Copy() Element
-	Mul( *Element ) Element
+	Mul(*Element) Element
 	SetToOne() Element
 }
 
@@ -20,8 +22,8 @@ type BaseField struct {
 }
 
 type PointLike interface {
-	X() *big.Int
-	Y() *big.Int
+	X() *BigInt
+	Y() *BigInt
 }
 
 func powWindow(base *Element, exp *big.Int) *Element {

@@ -3,13 +3,13 @@ package field
 import (
 	"math/big"
 	"math/rand"
-	// "sort"
+	"sort"
 	"testing"
 )
 
 type TestElement struct {
 	data *big.Int
-	mod big.Int
+	mod  big.Int
 }
 
 // implement Element for TestElement
@@ -22,14 +22,14 @@ func (elem *TestElement) Copy() Element {
 	return newElem
 }
 
-func (elem *TestElement) Mul( mulElem *Element ) Element {
-	teIn := (*mulElem).(*TestElement)
-	elem.data.Mul(elem.data, teIn.data) // TODO: this is sus ...
+func (elem *TestElement) Mul(mulElem *Element) Element {
+	in := (*mulElem).(*TestElement) // TODO: not a fan of this...
+	elem.data.Mul(elem.data, in.data)
 	elem.data.Mod(elem.data, &elem.mod)
 	return elem
 }
 
-func (elem *TestElement ) SetToOne() Element {
+func (elem *TestElement) SetToOne() Element {
 	elem.data.Set(ONE)
 	return elem
 }
@@ -84,14 +84,11 @@ func TestPowWindow(t *testing.T) {
 		makeBigInt("346147755795474257120521634428450035879485727536"),
 		makeBigInt("162545157220080657869228973848821629858076108602"))
 
-	/*
 	for i := 0; i < 10*1000; i++ {
 		// TODO: generator in Go?
 		testVals := []*big.Int{makeRandBigInt(), makeRandBigInt(), makeRandBigInt()}
 		sort.Sort(SortBigInts{testVals})
 		// using the lowest rand as the base, next as the exponent and largest as mod
-		checkPowWindowBigInt(t, testVals[0], testVals[1], testVals[2])
+		checkPowWindowBigInt(t, &TestElement{testVals[0], *testVals[2]}, testVals[1])
 	}
-	*/
 }
-

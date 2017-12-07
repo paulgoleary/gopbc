@@ -1,0 +1,11 @@
+. Trying to understand any trade-offs between pointers and interfaces
+. An interface instance is pointer-like but slightly larger
+.. based on this experiement:
+
+	xx := TestElement{}
+	println(unsafe.Sizeof(xx)) // 40 bytes
+	println(unsafe.Sizeof(&xx)) // 8 bytes
+	var yy Element = &xx
+	println(unsafe.Sizeof(yy)) // 16 bytes
+
+. Size of the interface does not depend on number of methods - as would be expected

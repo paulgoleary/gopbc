@@ -3,7 +3,6 @@ package pairing
 import (
 	"fmt"
 	"gobdc/field"
-	"math/big"
 	"testing"
 )
 
@@ -37,12 +36,11 @@ func getCompatParams() *PairingParameters {
 	return &params
 }
 
-func testPoint(t *testing.T, thePoint field.Point, strExpectX string, strExpectY string) {
+func testPoint(t *testing.T, thePoint field.PointLike, strExpectX string, strExpectY string) {
 
-	checkCoord := func(cmp *big.Int, expString string) {
-		expInt := big.Int{}
-		expInt.SetString(expString, 10)
-		if expInt.Cmp(cmp) != 0 {
+	checkCoord := func(cmp *field.BigInt, expString string) {
+		expInt := field.MakeBigIntStr(expString)
+		if !expInt.IsEqual(cmp) {
 			t.Errorf("Wrong value for point coord comparision, got: %s, want: %s.", cmp.String(), expString)
 		}
 	}
