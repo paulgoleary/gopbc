@@ -36,7 +36,7 @@ type CurveElement struct {
 // TODO: JPBC (PBC?) handles case w/o bytes and cofactor
 func (field *CurveField) initGenFromBytes( genNoCofac *[]byte ) {
 	field.genNoCofac = field.newElementFromBytes(genNoCofac)
-	field.gen = field.genNoCofac.Copy().Mul(field.cofactor)
+	field.gen = field.genNoCofac.dup().MulScalar(field.cofactor)
 }
 
 func (field *CurveField) GetGen() *CurveElement {
@@ -55,10 +55,10 @@ func (field *CurveField) newElementFromBytes( elemBytes *[]byte ) *CurveElement 
 	yBytes := (*elemBytes)[field.getTargetField().LengthInBytes:]
 
 	elem.DataX = new(BigInt)
-	elem.DataX.SetBytes(xBytes)
+	elem.DataX.setBytes(xBytes)
 
 	elem.DataY = new(BigInt)
-	elem.DataY.SetBytes(yBytes)
+	elem.DataY.setBytes(yBytes)
 
 	/*
 	//if point does not lie on curve, set it to O
@@ -100,6 +100,9 @@ func MakeCurveField(
 
 // TODO: Make function?
 
+// validate that Curve Element satisfies Element
+var _ Element = (*CurveElement)(nil)
+
 func (elem *CurveElement) IsInf() bool {
 	return elem.DataY == nil && elem.DataY == nil
 }
@@ -118,75 +121,50 @@ func (elem *CurveElement) Y() *BigInt {
 	return elem.DataY
 }
 
-// TODO: need to fully copy X and Y
-func (elem *CurveElement) Copy() *CurveElement {
-	newElem := *elem
-	return &newElem
+/*
+    public CurveElement mul(BigInteger n) {
+        return (CurveElement) pow(n);
+    }
+ */
+// TODO: for reasons I don't understand, multiplication by a scalar on a curve is pow ...?
+// ALSO TODO: not sure if MulScala ends up part of Element ...?
+func (elem *CurveElement) MulScalar( n *big.Int ) *CurveElement {
+	return powWindow(elem, n).(*CurveElement)
 }
 
-func (elem *CurveElement) Mul( n *big.Int ) *CurveElement {
-	// TODO !!!
+/*
+	Element interface:
+		Copy() Element
+		Mul(*Element) Element
+		SetToOne() Element
+
+ */
+
+func (elem *CurveElement) dup() *CurveElement {
+	newElem := new(CurveElement)
+	newElem.ElemField = elem.ElemField
+	newElem.DataX = elem.DataX.copy()
+	newElem.DataY = elem.DataY.copy()
+	return newElem
+}
+
+func (elem *CurveElement) Copy() Element {
+	return elem.dup()
+}
+
+// TODO
+func (elem *CurveElement) SetToOne() Element {
+	return elem
+}
+
+// TODO
+func (elem *CurveElement) Mul(elemIn Element) Element {
 	return elem
 }
 
 func (elem *CurveElement) set( in *CurveElement ) {
 	elem.DataX = in.DataX
 	elem.DataY = in.DataY
-}
-
-// TODO: wrapper for big.Int?
-type BigInt big.Int
-
-func MakeBigInt(x int64) *BigInt {
-	return (*BigInt)(big.NewInt(x))
-}
-
-func MakeBigIntStr(x string) *BigInt {
-	ret := big.Int{}
-	ret.SetString(x, 10)
-	return (*BigInt)(&ret)
-}
-
-func (bi *BigInt) isZero() bool {
-	return (*big.Int)(bi).Cmp(ZERO) == 0
-}
-
-func (bi *BigInt) copy() *BigInt {
-	newBigInt := new(BigInt)
-	(*big.Int)(newBigInt).SetBytes((*big.Int)(bi).Bytes())
-	return newBigInt
-}
-
-func (bi *BigInt) SetBytes(bytes []byte) {
-	(*big.Int)(bi).SetBytes(bytes)
-}
-
-func (bi *BigInt) IsEqual(in *BigInt) bool {
-	return (*big.Int)(bi).Cmp((*big.Int)(in)) == 0
-}
-
-func (bi *BigInt) sub(in *BigInt) *BigInt {
-	(*big.Int)(bi).Sub((*big.Int)(bi), (*big.Int)(in))
-	return bi
-}
-
-func (bi *BigInt) mul(in *BigInt) *BigInt {
-	(*big.Int)(bi).Mul((*big.Int)(bi), (*big.Int)(in))
-	return bi
-}
-
-func (bi *BigInt) square() *BigInt {
-	(*big.Int)(bi).Mul((*big.Int)(bi), (*big.Int)(bi))
-	return bi
-}
-
-func (bi *BigInt) invert(mod *big.Int) *BigInt {
-	(*big.Int)(bi).ModInverse((*big.Int)(bi), mod)
-	return bi
-}
-
-func (bi *BigInt) String() string {
-	return (*big.Int)(bi).String()
 }
 
 func (elem *CurveElement) twiceInternal() *CurveElement {
@@ -222,17 +200,18 @@ func (elem *CurveElement) mul(elemIn *CurveElement) *CurveElement {
 	// P1 != P2, so the slope of the line L through P1 and P2 is
 	// lambda = (y2-y1)/(x2-x1)
 	// Element lambda = element.y.duplicate().sub(y).mul(element.x.duplicate().sub(x).invert());
-	lambdaNumer := elemIn.DataY.copy().sub(elem.DataY)
-	lambdaDenom := elemIn.DataX.copy().sub(elem.DataX)
-	lambda := lambdaNumer.mul(lambdaDenom.invert(elem.ElemField.order))
+	targetOrder := elem.ElemField.getTargetField().FieldOrder
+	lambdaNumer := elemIn.DataY.copy().sub(elem.DataY, targetOrder)
+	lambdaDenom := elemIn.DataX.copy().sub(elem.DataX, targetOrder)
+	lambda := lambdaNumer.mul(lambdaDenom.invert(targetOrder), targetOrder)
 
 	// x3 = lambda^2 - x1 - x2
 	// Element x3 = lambda.duplicate().square().sub(x).sub(element.x);
-	x3 := lambda.copy().square().sub(elem.DataX).sub(elemIn.DataX)
+	x3 := lambda.copy().square(targetOrder).sub(elem.DataX, targetOrder).sub(elemIn.DataX, targetOrder)
 
 	//y3 = (x1-x3)lambda - y1
 	// Element y3 = x.duplicate().sub(x3).mul(lambda).sub(y);
-	y3 := elem.DataX.copy().sub(x3).mul(lambda).sub(elem.DataY)
+	y3 := elem.DataX.copy().sub(x3, targetOrder).mul(lambda, targetOrder).sub(elem.DataY, targetOrder)
 
 	// x.set(x3);
 	// y.set(y3);

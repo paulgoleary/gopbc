@@ -8,12 +8,77 @@ var TWO = big.NewInt(2)
 
 var BI_ZERO = MakeBigInt(0)
 
+/*
+	BigInt is intended to represent the base level of integer modular math for field computations.
+	What may be a bit confusing (and I need to think about) is that I don't intend this to be a replacement for big.Int everywhere.
+	The full name here is more explicit: field.BigInt - that is, a large integer that is a component of a field, which implies/requires modular math.
+	Another worthy goal here might be for the wrapper to enforce some level of invariance outside the `field` package
+ */
+type BigInt big.Int
+
+func MakeBigInt(x int64) *BigInt {
+	return (*BigInt)(big.NewInt(x))
+}
+
+func MakeBigIntStr(x string) *BigInt {
+	ret := big.Int{}
+	ret.SetString(x, 10)
+	return (*BigInt)(&ret)
+}
+
+func (bi *BigInt) isZero() bool {
+	return (*big.Int)(bi).Cmp(ZERO) == 0
+}
+
+func (bi *BigInt) copy() *BigInt {
+	newBigInt := new(BigInt)
+	(*big.Int)(newBigInt).SetBytes((*big.Int)(bi).Bytes())
+	return newBigInt
+}
+
+func (bi *BigInt) setBytes(bytes []byte) {
+	(*big.Int)(bi).SetBytes(bytes)
+}
+
+func (bi *BigInt) IsEqual(in *BigInt) bool {
+	return (*big.Int)(bi).Cmp((*big.Int)(in)) == 0
+}
+
+func (bi *BigInt) sub(in *BigInt, modIn *big.Int) *BigInt {
+	(*big.Int)(bi).Sub((*big.Int)(bi), (*big.Int)(in))
+	return bi.mod(modIn)
+}
+
+func (bi *BigInt) mod(in *big.Int) *BigInt {
+	(*big.Int)(bi).Mod((*big.Int)(bi), in)
+	return bi
+}
+
+func (bi *BigInt) mul(in *BigInt, modIn *big.Int) *BigInt {
+	(*big.Int)(bi).Mul((*big.Int)(bi), (*big.Int)(in))
+	return bi.mod(modIn)
+}
+
+func (bi *BigInt) square(modIn *big.Int) *BigInt {
+	(*big.Int)(bi).Mul((*big.Int)(bi), (*big.Int)(bi))
+	return bi.mod(modIn)
+}
+
+func (bi *BigInt) invert(mod *big.Int) *BigInt {
+	(*big.Int)(bi).ModInverse((*big.Int)(bi), mod)
+	return bi
+}
+
+func (bi *BigInt) String() string {
+	return (*big.Int)(bi).String()
+}
+
 type Field interface {
 }
 
 type Element interface {
 	Copy() Element
-	Mul(*Element) Element
+	Mul(Element) Element
 	SetToOne() Element
 }
 
@@ -26,13 +91,13 @@ type PointLike interface {
 	Y() *BigInt
 }
 
-func powWindow(base *Element, exp *big.Int) *Element {
+func powWindow(base Element, exp *big.Int) Element {
 
-	result := (*base).Copy()
+	result := base.Copy()
 	result.SetToOne()
 
 	if exp.Sign() == 0 {
-		return &result
+		return result
 	}
 
 	k := optimalPowWindowSize(exp)
@@ -43,7 +108,7 @@ func powWindow(base *Element, exp *big.Int) *Element {
 
 	inWord := false
 	for s := exp.BitLen() - 1; s >= 0; s-- {
-		result.Mul(&result)
+		result.Mul(result)
 
 		bit := exp.Bit(s)
 
@@ -61,12 +126,12 @@ func powWindow(base *Element, exp *big.Int) *Element {
 		}
 
 		if wordBits == k || s == 0 {
-			result.Mul(&(*lookups)[word])
+			result.Mul((*lookups)[word])
 			inWord = false
 		}
 	}
 
-	return &result
+	return result
 }
 
 func optimalPowWindowSize(exp *big.Int) uint {
@@ -91,7 +156,7 @@ func optimalPowWindowSize(exp *big.Int) uint {
 	}
 }
 
-func buildPowWindow(k uint, base *Element) *[]Element {
+func buildPowWindow(k uint, base Element) *[]Element {
 
 	if k < 1 {
 		return nil
@@ -100,7 +165,7 @@ func buildPowWindow(k uint, base *Element) *[]Element {
 	lookupSize := 1 << k
 	lookups := make([]Element, lookupSize)
 
-	lookups[0] = (*base).Copy().SetToOne()
+	lookups[0] = base.Copy().SetToOne()
 	for x := 1; x < lookupSize; x++ {
 		lookups[x] = lookups[x-1].Copy()
 		lookups[x].Mul(base)
