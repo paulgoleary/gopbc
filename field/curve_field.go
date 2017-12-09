@@ -2,20 +2,6 @@ package field
 
 import "math/big"
 
-/*
-   public CurveField(SecureRandom random, Element a, Element b, BigInteger order, BigInteger cofac, byte[] genNoCofac) {
-       super(random, (F) a.getField());
-
-       this.random = random;
-       this.a = a;
-       this.b = b;
-       this.order = order;
-       this.cofac = cofac;
-
-       initGen(genNoCofac);
-   }
-*/
-
 type CurveField struct {
 	a          *ZrElement
 	b          *ZrElement
@@ -34,7 +20,7 @@ type CurveElement struct {
 // CurveField
 
 // TODO: JPBC (PBC?) handles case w/o bytes and cofactor
-func (field *CurveField) initGenFromBytes( genNoCofac *[]byte ) {
+func (field *CurveField) initGenFromBytes(genNoCofac *[]byte) {
 	field.genNoCofac = field.newElementFromBytes(genNoCofac)
 	field.gen = field.genNoCofac.dup().MulScalar(field.cofactor)
 }
@@ -47,7 +33,7 @@ func (field *CurveField) getTargetField() *ZrField {
 	return field.a.ElemField
 }
 
-func (field *CurveField) newElementFromBytes( elemBytes *[]byte ) *CurveElement {
+func (field *CurveField) newElementFromBytes(elemBytes *[]byte) *CurveElement {
 
 	elem := CurveElement{ElemField: field}
 
@@ -61,30 +47,21 @@ func (field *CurveField) newElementFromBytes( elemBytes *[]byte ) *CurveElement 
 	elem.DataY.setBytes(yBytes)
 
 	/*
-	//if point does not lie on curve, set it to O
-	if (!isValid())
-		setToZero();
+		//if point does not lie on curve, set it to O
+		if (!isValid())
+			setToZero();
 
-	return len;
+		return len;
 	*/
 	return &elem
 }
 
-/*
-        // Remember the curve is: y^2 = x^3 + ax
-        return new CurveField<Field>(random,
-                                     Fq.newOneElement(),   // a
-                                     Fq.newZeroElement(),  // b
-                                     r,                    // order
-                                     h,                    // cofactor  (r*h)=q+1=#E(F_q)
-                                     genNoCofac);
- */
 func MakeCurveField(
 	a *ZrElement,
 	b *ZrElement,
 	order *big.Int,
 	cofactor *big.Int,
-	genNoCofacBytes *[]byte ) *CurveField {
+	genNoCofacBytes *[]byte) *CurveField {
 
 	field := new(CurveField)
 	field.a = a
@@ -121,14 +98,9 @@ func (elem *CurveElement) Y() *BigInt {
 	return elem.DataY
 }
 
-/*
-    public CurveElement mul(BigInteger n) {
-        return (CurveElement) pow(n);
-    }
- */
-// TODO: for reasons I don't understand, multiplication by a scalar on a curve is pow ...?
-// ALSO TODO: not sure if MulScala ends up part of Element ...?
-func (elem *CurveElement) MulScalar( n *big.Int ) *CurveElement {
+// TODO: for reasons I DO NOT understand, multiplication by a scalar on a curve is pow ...?
+// ALSO TODO: not sure if MulScalar ends up part of Element ...?
+func (elem *CurveElement) MulScalar(n *big.Int) *CurveElement {
 	return powWindow(elem, n).(*CurveElement)
 }
 
@@ -137,8 +109,7 @@ func (elem *CurveElement) MulScalar( n *big.Int ) *CurveElement {
 		Copy() Element
 		Mul(*Element) Element
 		SetToOne() Element
-
- */
+*/
 
 func (elem *CurveElement) dup() *CurveElement {
 	newElem := new(CurveElement)
@@ -152,23 +123,37 @@ func (elem *CurveElement) Copy() Element {
 	return elem.dup()
 }
 
-// TODO
 func (elem *CurveElement) SetToOne() Element {
+	elem.SetInf()
 	return elem
 }
 
-// TODO
 func (elem *CurveElement) Mul(elemIn Element) Element {
-	return elem
+	res := elem.mul(elemIn.(*CurveElement))
+	return res
 }
 
-func (elem *CurveElement) set( in *CurveElement ) {
+func (elem *CurveElement) set(in *CurveElement) {
 	elem.DataX = in.DataX
 	elem.DataY = in.DataY
 }
 
 func (elem *CurveElement) twiceInternal() *CurveElement {
-	// TODO !!!
+	// We have P1 = P2 so the tangent line T at P1 ha slope
+	// lambda = (3x^2 + a) / 2y
+	targetOrder := elem.ElemField.getTargetField().FieldOrder
+	lambdaNumer := elem.DataX.copy().square(targetOrder).mul(BI_THREE, targetOrder).add(elem.ElemField.a.Data, targetOrder)
+	lambdaDenom := elem.DataY.copy().add(elem.DataY, targetOrder).invert(targetOrder)
+	lambda := lambdaNumer.mul(lambdaDenom, targetOrder)
+
+	// x3 = lambda^2 - 2x
+	x3 := lambda.copy().square(targetOrder).sub(elem.DataX.copy().add(elem.DataX, targetOrder), targetOrder)
+
+	// y3 = (x - x3) lambda - y
+	y3 := elem.DataX.copy().sub(x3, targetOrder).mul(lambda, targetOrder).sub(elem.DataY, targetOrder)
+
+	elem.DataX = x3
+	elem.DataY = y3
 	return elem
 }
 
@@ -199,22 +184,17 @@ func (elem *CurveElement) mul(elemIn *CurveElement) *CurveElement {
 
 	// P1 != P2, so the slope of the line L through P1 and P2 is
 	// lambda = (y2-y1)/(x2-x1)
-	// Element lambda = element.y.duplicate().sub(y).mul(element.x.duplicate().sub(x).invert());
 	targetOrder := elem.ElemField.getTargetField().FieldOrder
 	lambdaNumer := elemIn.DataY.copy().sub(elem.DataY, targetOrder)
 	lambdaDenom := elemIn.DataX.copy().sub(elem.DataX, targetOrder)
 	lambda := lambdaNumer.mul(lambdaDenom.invert(targetOrder), targetOrder)
 
 	// x3 = lambda^2 - x1 - x2
-	// Element x3 = lambda.duplicate().square().sub(x).sub(element.x);
 	x3 := lambda.copy().square(targetOrder).sub(elem.DataX, targetOrder).sub(elemIn.DataX, targetOrder)
 
-	//y3 = (x1-x3)lambda - y1
-	// Element y3 = x.duplicate().sub(x3).mul(lambda).sub(y);
+	// y3 = (x1-x3) lambda - y1
 	y3 := elem.DataX.copy().sub(x3, targetOrder).mul(lambda, targetOrder).sub(elem.DataY, targetOrder)
 
-	// x.set(x3);
-	// y.set(y3);
 	elem.DataX = x3
 	elem.DataY = y3
 

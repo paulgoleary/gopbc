@@ -11,7 +11,7 @@ type ZrField struct {
 
 type ZrElement struct {
 	ElemField *ZrField
-	Data      *big.Int
+	Data      *BigInt
 }
 
 // ZrElement
@@ -32,13 +32,13 @@ func MakeZrField(fieldOrder *big.Int) *ZrField {
 func (field *ZrField) NewOneElement() *ZrElement {
 	elem := new(ZrElement)
 	elem.ElemField = field
-	elem.Data = ONE
+	elem.Data = BI_ONE
 	return elem
 }
 
 func (field *ZrField) NewZeroElement() *ZrElement {
 	elem := new(ZrElement)
 	elem.ElemField = field
-	elem.Data = ZERO
+	elem.Data = BI_ZERO
 	return elem
 }

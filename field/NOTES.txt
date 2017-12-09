@@ -1,3 +1,18 @@
+TODO
+
+. Not sure if I like the explicit copy() method that's currently necessary to ensure that mutable types don't keep stepped on.
+.. I wonder if trying to re-use mutable types is worth the effort performance-wise?
+.. If not I could move the copy into the methods - of BigInt for example - and essentially make things behave like they're immutable.
+
+TESTING TODO
+
+. Test powWindow for scalar values
+.. DONE - base_test.go
+. Test powWindow for curve elements
+. Test curve element multiplication
+
+OTHER
+
 . Trying to understand any trade-offs between pointers and interfaces
 . An interface instance is pointer-like but slightly larger
 .. based on this experiement:

@@ -5,15 +5,18 @@ import "math/big"
 var ZERO = big.NewInt(0)
 var ONE = big.NewInt(1)
 var TWO = big.NewInt(2)
+var THREE = big.NewInt(3)
 
 var BI_ZERO = MakeBigInt(0)
+var BI_ONE = MakeBigInt(1)
+var BI_THREE = MakeBigInt(3)
 
 /*
 	BigInt is intended to represent the base level of integer modular math for field computations.
 	What may be a bit confusing (and I need to think about) is that I don't intend this to be a replacement for big.Int everywhere.
 	The full name here is more explicit: field.BigInt - that is, a large integer that is a component of a field, which implies/requires modular math.
 	Another worthy goal here might be for the wrapper to enforce some level of invariance outside the `field` package
- */
+*/
 type BigInt big.Int
 
 func MakeBigInt(x int64) *BigInt {
@@ -31,6 +34,9 @@ func (bi *BigInt) isZero() bool {
 }
 
 func (bi *BigInt) copy() *BigInt {
+	if bi == nil {
+		return nil
+	}
 	newBigInt := new(BigInt)
 	(*big.Int)(newBigInt).SetBytes((*big.Int)(bi).Bytes())
 	return newBigInt
@@ -42,6 +48,11 @@ func (bi *BigInt) setBytes(bytes []byte) {
 
 func (bi *BigInt) IsEqual(in *BigInt) bool {
 	return (*big.Int)(bi).Cmp((*big.Int)(in)) == 0
+}
+
+func (bi *BigInt) add(in *BigInt, modIn *big.Int) *BigInt {
+	(*big.Int)(bi).Add((*big.Int)(bi), (*big.Int)(in))
+	return bi.mod(modIn)
 }
 
 func (bi *BigInt) sub(in *BigInt, modIn *big.Int) *BigInt {

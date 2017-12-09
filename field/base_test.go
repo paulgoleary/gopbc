@@ -22,8 +22,8 @@ func (elem *TestElement) Copy() Element {
 	return newElem
 }
 
-func (elem *TestElement) Mul(mulElem *Element) Element {
-	in := (*mulElem).(*TestElement) // TODO: not a fan of this...
+func (elem *TestElement) Mul(mulElem Element) Element {
+	in := mulElem.(*TestElement) // TODO: not a fan of this...
 	elem.data.Mul(elem.data, in.data)
 	elem.data.Mod(elem.data, &elem.mod)
 	return elem
@@ -44,8 +44,8 @@ func checkPowWindowBigInt(t *testing.T, testBase *TestElement, testExp *big.Int)
 
 func checkPowWindow(t *testing.T, testBase *TestElement, testExp, expectedVal *big.Int) {
 	var elem Element = testBase
-	testPow := powWindow(&elem, testExp)
-	if (*testPow).(*TestElement).data.Cmp(expectedVal) != 0 {
+	testPow := powWindow(elem, testExp)
+	if testPow.(*TestElement).data.Cmp(expectedVal) != 0 {
 		t.Errorf("powWindow exponent result was wrong, got: %d, want: %d.", testPow, expectedVal)
 	}
 }
