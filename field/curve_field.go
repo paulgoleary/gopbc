@@ -6,9 +6,9 @@ type CurveField struct {
 	a          *ZrElement
 	b          *ZrElement
 	order      *big.Int
-	cofactor   *big.Int
+	cofactor   *big.Int // TODO: do we need this ...?
 	gen        *CurveElement // TODO: not sure here...
-	genNoCofac *CurveElement
+	genNoCofac *CurveElement // TODO: don't need this ...?
 }
 
 type CurveElement struct {
