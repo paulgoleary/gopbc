@@ -29,4 +29,3 @@ func getCompatParams() *PairingParameters {
 
 	return &params
 }
-

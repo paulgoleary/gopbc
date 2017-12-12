@@ -6,7 +6,7 @@ type CurveField struct {
 	a          *ZrElement
 	b          *ZrElement
 	order      *big.Int
-	cofactor   *big.Int // TODO: do we need this ...?
+	cofactor   *big.Int      // TODO: do we need this ...?
 	gen        *CurveElement // TODO: not sure here...
 	genNoCofac *CurveElement // TODO: don't need this ...?
 }
@@ -77,7 +77,7 @@ func MakeCurveField(
 
 // TODO: Make function?
 
-// validate that Curve Element satisfies Element
+// validate that CurveElement satisfies Element
 var _ Element = (*CurveElement)(nil)
 
 func (elem *CurveElement) IsInf() bool {
@@ -102,6 +102,11 @@ func (elem *CurveElement) Y() *BigInt {
 // ALSO TODO: not sure if MulScalar ends up part of Element ...?
 func (elem *CurveElement) MulScalar(n *big.Int) *CurveElement {
 	return powWindow(elem, n).(*CurveElement)
+}
+
+func (elem *CurveElement) PowZn(elemIn Element) *CurveElement {
+	zrElem := elemIn.(*ZrElement)
+	return powWindow(elem, zrElem.GetInt()).(*CurveElement)
 }
 
 /*

@@ -33,13 +33,17 @@ func (bi *BigInt) isZero() bool {
 	return (*big.Int)(bi).Cmp(ZERO) == 0
 }
 
-func (bi *BigInt) copy() *BigInt {
+func CopyFrom(bi *big.Int) *BigInt {
 	if bi == nil {
 		return nil
 	}
 	newBigInt := new(BigInt)
 	(*big.Int)(newBigInt).SetBytes((*big.Int)(bi).Bytes())
 	return newBigInt
+}
+
+func (bi *BigInt) copy() *BigInt {
+	return CopyFrom((*big.Int)(bi))
 }
 
 func (bi *BigInt) setBytes(bytes []byte) {

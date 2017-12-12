@@ -16,8 +16,30 @@ type ZrElement struct {
 
 // ZrElement
 
-func (e ZrElement) PowZn(eZn ZrElement) ZrElement {
-	return e
+// validate that ZrElement satisfies Element
+var _ Element = (*ZrElement)(nil)
+
+func (elem ZrElement) PowZn(eZn ZrElement) ZrElement {
+	return elem
+}
+
+func (elem ZrElement) GetInt() *big.Int {
+	return (*big.Int)(elem.Data)
+}
+
+// TODO
+func (elem ZrElement) Copy() Element {
+	return elem
+}
+
+// TODO
+func (elem ZrElement) Mul(Element) Element {
+	return elem
+}
+
+// TODO
+func (elem ZrElement) SetToOne() Element {
+	return elem
 }
 
 // ZrField
@@ -40,5 +62,12 @@ func (field *ZrField) NewZeroElement() *ZrElement {
 	elem := new(ZrElement)
 	elem.ElemField = field
 	elem.Data = BI_ZERO
+	return elem
+}
+
+func (field *ZrField) NewElement(elemValue *big.Int) *ZrElement {
+	elem := new(ZrElement)
+	elem.ElemField = field
+	elem.Data = CopyFrom(elemValue)
 	return elem
 }
