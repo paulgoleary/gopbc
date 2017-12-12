@@ -19,6 +19,7 @@ type ZrElement struct {
 // validate that ZrElement satisfies Element
 var _ Element = (*ZrElement)(nil)
 
+// TODO
 func (elem ZrElement) PowZn(eZn ZrElement) ZrElement {
 	return elem
 }

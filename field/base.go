@@ -79,6 +79,12 @@ func (bi *BigInt) square(modIn *big.Int) *BigInt {
 	return bi.mod(modIn)
 }
 
+func (bi *BigInt) sqrt(modIn *big.Int) *BigInt {
+	// Int.ModSqrt implements  Tonelli-Shanks and also a more optimal version when modIn = 3 mod 4
+	(*big.Int)(bi).ModSqrt((*big.Int)(bi), modIn)
+	return bi
+}
+
 func (bi *BigInt) invert(mod *big.Int) *BigInt {
 	(*big.Int)(bi).ModInverse((*big.Int)(bi), mod)
 	return bi

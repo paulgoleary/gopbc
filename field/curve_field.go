@@ -1,6 +1,8 @@
 package field
 
-import "math/big"
+import (
+	"math/big"
+)
 
 type CurveField struct {
 	a          *ZrElement
@@ -46,13 +48,27 @@ func (field *CurveField) newElementFromBytes(elemBytes *[]byte) *CurveElement {
 	elem.DataY = new(BigInt)
 	elem.DataY.setBytes(yBytes)
 
-	/*
-		//if point does not lie on curve, set it to O
-		if (!isValid())
-			setToZero();
+	if !elem.isValid() {
+		elem.SetToZero()
+	}
+	return &elem
+}
 
-		return len;
-	*/
+// general curve is y^2 = x^3 + ax + b
+func (field *CurveField) calcYSquared(xIn *BigInt) *BigInt {
+	fieldOrder := field.order
+	// NOTE for efficiency we do *not* copy the input and we mutate in place - caller beware
+	return xIn.square(fieldOrder).add(field.a.Data, fieldOrder).mul(xIn, fieldOrder).add(field.b.Data, fieldOrder)
+}
+
+func (field *CurveField) newElementFromX(x *big.Int) *CurveElement {
+
+	elem := CurveElement{ElemField: field}
+
+	calcY2 := field.calcYSquared(CopyFrom(x))
+	elem.DataY = calcY2.sqrt(field.order)
+	elem.DataX = CopyFrom(x)
+
 	return &elem
 }
 
@@ -109,12 +125,17 @@ func (elem *CurveElement) PowZn(elemIn Element) *CurveElement {
 	return powWindow(elem, zrElem.GetInt()).(*CurveElement)
 }
 
-/*
-	Element interface:
-		Copy() Element
-		Mul(*Element) Element
-		SetToOne() Element
-*/
+func (elem *CurveElement) isValid() bool {
+
+	if elem.IsInf() {
+		return true
+	}
+
+	calcY2 := elem.ElemField.calcYSquared(elem.DataX.copy())
+	calcY2Check := elem.DataY.copy().square(elem.ElemField.order)
+
+	return calcY2.IsEqual(calcY2Check)
+}
 
 func (elem *CurveElement) dup() *CurveElement {
 	newElem := new(CurveElement)
@@ -126,6 +147,11 @@ func (elem *CurveElement) dup() *CurveElement {
 
 func (elem *CurveElement) Copy() Element {
 	return elem.dup()
+}
+
+func (elem *CurveElement) SetToZero() Element {
+	elem.SetInf()
+	return elem
 }
 
 func (elem *CurveElement) SetToOne() Element {
