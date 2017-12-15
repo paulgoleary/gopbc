@@ -10,7 +10,7 @@ import (
 func testPoint(t *testing.T, thePoint field.PointLike, strExpectX string, strExpectY string) {
 
 	checkCoord := func(cmp *field.BigInt, expString string) {
-		expInt := field.MakeBigIntStr(expString)
+		expInt := field.MakeBigIntStr(expString, false)
 		if !expInt.IsEqual(cmp) {
 			t.Errorf("Wrong value for point coord comparision, got: %s, want: %s.", cmp.String(), expString)
 		}

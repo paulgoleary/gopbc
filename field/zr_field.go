@@ -25,7 +25,11 @@ func (elem ZrElement) PowZn(eZn ZrElement) ZrElement {
 }
 
 func (elem ZrElement) GetInt() *big.Int {
-	return (*big.Int)(elem.Data)
+	return &elem.Data.v
+}
+
+func (elem ZrElement) String() string {
+	return elem.Data.String()
 }
 
 // TODO
@@ -69,6 +73,6 @@ func (field *ZrField) NewZeroElement() *ZrElement {
 func (field *ZrField) NewElement(elemValue *big.Int) *ZrElement {
 	elem := new(ZrElement)
 	elem.ElemField = field
-	elem.Data = CopyFrom(elemValue)
+	elem.Data = CopyFrom(elemValue, true)
 	return elem
 }

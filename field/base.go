@@ -1,103 +1,155 @@
 package field
 
-import "math/big"
+import (
+	"math/big"
+)
 
 var ZERO = big.NewInt(0)
 var ONE = big.NewInt(1)
 var TWO = big.NewInt(2)
 var THREE = big.NewInt(3)
 
-var BI_ZERO = MakeBigInt(0)
-var BI_ONE = MakeBigInt(1)
-var BI_THREE = MakeBigInt(3)
+var BI_ZERO = MakeBigInt(0, true)
+var BI_ONE = MakeBigInt(1, true)
+var BI_THREE = MakeBigInt(3, true)
 
 /*
 	BigInt is intended to represent the base level of integer modular math for field computations.
 	What may be a bit confusing (and I need to think about) is that I don't intend this to be a replacement for big.Int everywhere.
 	The full name here is more explicit: field.BigInt - that is, a large integer that is a component of a field, which implies/requires modular math.
-	Another worthy goal here might be for the wrapper to enforce some level of invariance outside the `field` package
 */
-type BigInt big.Int
-
-func MakeBigInt(x int64) *BigInt {
-	return (*BigInt)(big.NewInt(x))
+type BigInt struct {
+	v big.Int
+	frozen bool
 }
 
-func MakeBigIntStr(x string) *BigInt {
+func MakeBigInt(x int64, frozen bool) *BigInt {
+	return &BigInt{ *big.NewInt(x), frozen  }
+}
+
+func MakeBigIntStr(x string, frozen bool) *BigInt {
 	ret := big.Int{}
 	ret.SetString(x, 10)
-	return (*BigInt)(&ret)
+	return &BigInt{ret, frozen}
+}
+
+func (bi *BigInt) freeze() {
+	bi.frozen = true
+	return
 }
 
 func (bi *BigInt) isZero() bool {
-	return (*big.Int)(bi).Cmp(ZERO) == 0
+	return bi.v.Cmp(ZERO) == 0
 }
 
-func CopyFrom(bi *big.Int) *BigInt {
+func CopyFrom(bi *big.Int, frozen bool) *BigInt {
 	if bi == nil {
 		return nil
 	}
 	newBigInt := new(BigInt)
-	(*big.Int)(newBigInt).SetBytes((*big.Int)(bi).Bytes())
+	newBigInt.v.SetBytes(bi.Bytes())
+	newBigInt.frozen = frozen
 	return newBigInt
 }
 
+func (bi *BigInt) copyUnfrozen() *BigInt {
+	if bi == nil {
+		return nil
+	}
+	return CopyFrom(&bi.v, false)
+}
+
 func (bi *BigInt) copy() *BigInt {
-	return CopyFrom((*big.Int)(bi))
+	if bi == nil {
+		return nil
+	}
+	return CopyFrom(&bi.v, bi.frozen)
 }
 
 func (bi *BigInt) setBytes(bytes []byte) {
-	(*big.Int)(bi).SetBytes(bytes)
+	bi.v.SetBytes(bytes)
 }
 
+// TODO: how do we want these functions to behave WRT nil?
 func (bi *BigInt) IsEqual(in *BigInt) bool {
-	return (*big.Int)(bi).Cmp((*big.Int)(in)) == 0
+	if bi == nil || in == nil {
+		return false
+	}
+	return bi.v.Cmp(&in.v) == 0
 }
 
 func (bi *BigInt) add(in *BigInt, modIn *big.Int) *BigInt {
-	(*big.Int)(bi).Add((*big.Int)(bi), (*big.Int)(in))
+	if bi.frozen {
+		bi = bi.copyUnfrozen()
+	}
+	bi.v.Add(&bi.v, &in.v)
 	return bi.mod(modIn)
 }
 
 func (bi *BigInt) sub(in *BigInt, modIn *big.Int) *BigInt {
-	(*big.Int)(bi).Sub((*big.Int)(bi), (*big.Int)(in))
+	if bi.frozen {
+		bi = bi.copyUnfrozen()
+	}
+	bi.v.Sub(&bi.v, &in.v)
 	return bi.mod(modIn)
 }
 
 func (bi *BigInt) mod(in *big.Int) *BigInt {
-	(*big.Int)(bi).Mod((*big.Int)(bi), in)
+	if bi.frozen {
+		bi = bi.copyUnfrozen()
+	}
+	bi.v.Mod(&bi.v, in)
 	return bi
 }
 
 func (bi *BigInt) mul(in *BigInt, modIn *big.Int) *BigInt {
-	(*big.Int)(bi).Mul((*big.Int)(bi), (*big.Int)(in))
+	if bi.frozen {
+		bi = bi.copyUnfrozen()
+	}
+	bi.v.Mul(&bi.v, &in.v)
 	return bi.mod(modIn)
 }
 
 func (bi *BigInt) square(modIn *big.Int) *BigInt {
-	(*big.Int)(bi).Mul((*big.Int)(bi), (*big.Int)(bi))
+	if bi.frozen {
+		bi = bi.copyUnfrozen()
+	}
+	bi.v.Mul(&bi.v, &bi.v)
 	return bi.mod(modIn)
 }
 
 func (bi *BigInt) sqrt(modIn *big.Int) *BigInt {
 	// Int.ModSqrt implements  Tonelli-Shanks and also a more optimal version when modIn = 3 mod 4
-	(*big.Int)(bi).ModSqrt((*big.Int)(bi), modIn)
-	return bi
+	// UGH! need to work around this bug: https://github.com/golang/go/issues/22265
+	// for now always copy
+	calc := bi.copyUnfrozen()
+	calc.v.ModSqrt(&bi.v, modIn)
+	return calc
 }
 
 func (bi *BigInt) invert(mod *big.Int) *BigInt {
-	(*big.Int)(bi).ModInverse((*big.Int)(bi), mod)
+	if bi.frozen {
+		bi = bi.copyUnfrozen()
+	}
+	bi.v.ModInverse(&bi.v, mod)
 	return bi
 }
 
-func (bi *BigInt) String() string {
-	return (*big.Int)(bi).String()
+func (bi *BigInt) negate(modIn *big.Int) *BigInt {
+	if bi.isZero() {
+		return BI_ONE.copyUnfrozen()
+	}
+	return CopyFrom(modIn, false).sub(bi, modIn)
 }
 
-type Field interface {
+func (bi *BigInt) String() string {
+	return bi.v.String()
 }
+
+type Field interface {}
 
 type Element interface {
+	String() string
 	Copy() Element
 	Mul(Element) Element
 	SetToOne() Element
@@ -114,8 +166,8 @@ type PointLike interface {
 
 func powWindow(base Element, exp *big.Int) Element {
 
-	result := base.Copy()
-	result.SetToOne()
+	// note: does not mutate base
+	result := base.SetToOne()
 
 	if exp.Sign() == 0 {
 		return result
@@ -129,7 +181,7 @@ func powWindow(base Element, exp *big.Int) Element {
 
 	inWord := false
 	for s := exp.BitLen() - 1; s >= 0; s-- {
-		result.Mul(result)
+		result = result.Mul(result)
 
 		bit := exp.Bit(s)
 
@@ -147,7 +199,7 @@ func powWindow(base Element, exp *big.Int) Element {
 		}
 
 		if wordBits == k || s == 0 {
-			result.Mul((*lookups)[word])
+			result = result.Mul((*lookups)[word])
 			inWord = false
 		}
 	}
@@ -186,10 +238,11 @@ func buildPowWindow(k uint, base Element) *[]Element {
 	lookupSize := 1 << k
 	lookups := make([]Element, lookupSize)
 
-	lookups[0] = base.Copy().SetToOne()
+	// SetToOne copies ...
+	lookups[0] = base.SetToOne()
 	for x := 1; x < lookupSize; x++ {
-		lookups[x] = lookups[x-1].Copy()
-		lookups[x].Mul(base)
+		newLookup := lookups[x-1].Copy()
+		lookups[x] = newLookup.Mul(base)
 	}
 
 	return &lookups

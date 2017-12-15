@@ -24,14 +24,20 @@ func (elem *TestElement) Copy() Element {
 
 func (elem *TestElement) Mul(mulElem Element) Element {
 	in := mulElem.(*TestElement) // TODO: not a fan of this...
-	elem.data.Mul(elem.data, in.data)
-	elem.data.Mod(elem.data, &elem.mod)
-	return elem
+	ret := elem.Copy().(*TestElement)
+	ret.data.Mul(elem.data, in.data)
+	ret.data.Mod(ret.data, &elem.mod)
+	return ret
 }
 
 func (elem *TestElement) SetToOne() Element {
-	elem.data.Set(ONE)
-	return elem
+	ret := elem.Copy().(*TestElement)
+	ret.data.Set(ONE)
+	return ret
+}
+
+func (elem *TestElement) String() string {
+	return elem.data.String()
 }
 
 // validate that TestElement satisfies Element interface
@@ -46,7 +52,7 @@ func checkPowWindow(t *testing.T, testBase *TestElement, testExp, expectedVal *b
 	var elem Element = testBase
 	testPow := powWindow(elem, testExp)
 	if testPow.(*TestElement).data.Cmp(expectedVal) != 0 {
-		t.Errorf("powWindow exponent result was wrong, got: %d, want: %d.", testPow, expectedVal)
+		t.Errorf("powWindow exponent result was wrong, got: %d, want: %d.", testPow.String(), expectedVal.String())
 	}
 }
 
@@ -85,10 +91,44 @@ func TestPowWindow(t *testing.T) {
 		makeBigInt("162545157220080657869228973848821629858076108602"))
 
 	for i := 0; i < 10*1000; i++ {
-		// TODO: generator in Go?
 		testVals := []*big.Int{makeRandBigInt(), makeRandBigInt(), makeRandBigInt()}
 		sort.Sort(SortBigInts{testVals})
 		// using the lowest rand as the base, next as the exponent and largest as mod
 		checkPowWindowBigInt(t, &TestElement{testVals[0], *testVals[2]}, testVals[1])
 	}
+}
+
+func testFrozeness(t *testing.T, x *BigInt, expect *BigInt, calc func (*BigInt) *BigInt) {
+	save := x.copyUnfrozen()
+	y := calc(x)
+	if !save.IsEqual(x) {
+		t.Errorf("Frozen value should have stayed the same: %s", save.String())
+	}
+	if !y.IsEqual(expect) {
+		t.Errorf("Got wrong calc value: expected %s, got %s", expect.String(), y.String())
+	}
+}
+
+func TestBigIntMath(t *testing.T) {
+
+	test100 := MakeBigInt(100, false)
+	test200 := MakeBigInt(200, false)
+
+	testMod := big.NewInt(1000003) // need an odd prime or mod sqrt panics
+
+	// expect test100 to mutate
+	test100.add(test200, testMod)
+	if !test100.IsEqual(MakeBigInt(300, false)) {
+		t.Errorf("Addition failed: expected 300, got %s", test100.String())
+	}
+
+	// reset to 100 - frozen
+	test100 = MakeBigInt(100, true)
+	testFrozeness(t, test100, MakeBigInt(200, false), func(x *BigInt) *BigInt { return x.add(test100, testMod) } )
+	testFrozeness(t, test100, MakeBigInt(0, false), func(x *BigInt) *BigInt { return x.sub(test100, testMod) } )
+	testFrozeness(t, test100, MakeBigInt(100, false), func(x *BigInt) *BigInt { return x.mod(testMod) } )
+	testFrozeness(t, test100, MakeBigInt(10000, false), func(x *BigInt) *BigInt { return x.mul(test100, testMod) } )
+	testFrozeness(t, test100, MakeBigInt(10000, false), func(x *BigInt) *BigInt { return x.square(testMod) } )
+	testFrozeness(t, test100, MakeBigInt(10, false), func(x *BigInt) *BigInt { return x.sqrt(testMod) } )
+	testFrozeness(t, test100, MakeBigInt(330001, false), func(x *BigInt) *BigInt { return x.invert(testMod) } )
 }
