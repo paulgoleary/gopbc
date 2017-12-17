@@ -6,7 +6,6 @@ import (
 
 type ZrField struct {
 	BaseField
-	FieldOrder *big.Int
 }
 
 type ZrElement struct {

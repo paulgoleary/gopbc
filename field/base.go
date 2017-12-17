@@ -2,6 +2,7 @@ package field
 
 import (
 	"math/big"
+	"fmt"
 )
 
 var ZERO = big.NewInt(0)
@@ -148,6 +149,10 @@ func (bi *BigInt) String() string {
 
 type Field interface {}
 
+type PointField interface {
+	MakeElement() PointElement
+}
+
 type Element interface {
 	String() string
 	Copy() Element
@@ -155,13 +160,35 @@ type Element interface {
 	SetToOne() Element
 }
 
-type BaseField struct {
-	LengthInBytes int
-}
-
-type PointLike interface {
+type PointElement interface {
+	Element
 	X() *BigInt
 	Y() *BigInt
+	Negate() PointElement // TODO: might need to promote to Element?
+}
+
+type MakeElementFunc func() Element
+type BaseField struct {
+	LengthInBytes int
+	FieldOrder *big.Int
+}
+
+type PointLike struct {
+	DataX *BigInt
+	DataY *BigInt
+}
+
+func (p *PointLike) String() string {
+	return fmt.Sprintf("[%s],[%s]", p.DataX.String(), p.DataY.String())
+}
+
+func (p *PointLike) freeze() {
+	p.DataX.freeze()
+	p.DataY.freeze()
+}
+
+func (p *PointLike) frozen() bool {
+	return p.DataX.frozen && p.DataY.frozen
 }
 
 func powWindow(base Element, exp *big.Int) Element {

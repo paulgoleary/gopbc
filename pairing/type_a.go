@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"gobdc/field"
 	"math/big"
+	"log"
 )
 
 type TypeAPairingParams struct {
@@ -21,6 +22,7 @@ type TypeAPairing struct {
 	TypeAPairingParams
 	BasePairing
 	Fq *field.ZrField
+	Fq2 *field.D2ExtensionQuadField
 }
 
 func (pairing *TypeAPairing) initTypeAPairingParams(params *PairingParameters) {
@@ -43,12 +45,19 @@ func (pairing *TypeAPairing) initTypeAPairingParams(params *PairingParameters) {
 
 // TODO: compatibility with jPBC and PBC ???
 const (
-	NAF_MILLER_PROJECTTIVE_METHOD = "naf-miller-projective"
+	NAF_MILLER_PROJECTIVE_METHOD = "naf-miller-projective"
 )
 
 func (pairing *TypeAPairing) initTypeAPairingMap(params *PairingParameters) {
-	method := params.getString("method", NAF_MILLER_PROJECTTIVE_METHOD)
-	println(fmt.Sprintf("CURRENTLY NOT IMPLEMENTED!: %s", method)) // TODO!!!
+	method := params.getString("method", NAF_MILLER_PROJECTIVE_METHOD)
+	if method != NAF_MILLER_PROJECTIVE_METHOD {
+		log.Panicf("Pairing method currently unsupported: %s", method)
+	}
+
+	pairing.mapping = MakeTypeATateNafProjMillerPairingMap(pairing)
+
+
+
 }
 
 /*
@@ -87,8 +96,7 @@ func (pairing *TypeAPairing) initTypeAPairingFields(params *PairingParameters) {
 	// Init Eq
 	// pairing.Eq = initEq();
 
-	// Init Fq2
-	// Fq2 = initFi();
+	pairing.Fq2 = field.MakeD2ExtensionQuadField(pairing.Fq)
 
 	// k=2, hence phi_k(q) = q + 1, phikOnr = (q+1)/r
 	// phikOnr = h;

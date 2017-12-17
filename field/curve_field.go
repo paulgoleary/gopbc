@@ -2,13 +2,12 @@ package field
 
 import (
 	"math/big"
-	"fmt"
 )
 
 type CurveField struct {
+	BaseField
 	a          *ZrElement
 	b          *ZrElement
-	order      *big.Int
 	cofactor   *big.Int      // TODO: do we need this ...?
 	gen        *CurveElement // TODO: not sure here...
 	genNoCofac *CurveElement // TODO: don't need this ...?
@@ -16,8 +15,7 @@ type CurveField struct {
 
 type CurveElement struct {
 	ElemField *CurveField
-	DataX     *BigInt // TODO: perhaps X and Y should be elements of the target field, as in PBC/JPBC?
-	DataY     *BigInt
+	PointLike
 }
 
 // CurveField
@@ -90,6 +88,10 @@ func (field *CurveField) newElementFromStrings(xStr string, yStr string) *CurveE
 	return &elem
 }
 
+func getLengthInBytes( field *CurveField ) int {
+	return field.getTargetField().LengthInBytes * 2
+}
+
 func MakeCurveField(
 	a *ZrElement,
 	b *ZrElement,
@@ -100,13 +102,15 @@ func MakeCurveField(
 	field := new(CurveField)
 	field.a = a
 	field.b = b
-	field.order = order
+	field.FieldOrder = order
 	field.cofactor = cofactor
 	field.initGenFromBytes(genNoCofacBytes)
+	field.LengthInBytes = getLengthInBytes(field)
 
 	return field
 }
 
+// TODO: need to reconcile this and the other make function - not sure I both ...?
 // make minimal field for testing purposes - TODO: might need a generator?
 func makeTestCurveField(a *big.Int, b *big.Int, r *big.Int, q *big.Int) *CurveField {
 
@@ -115,7 +119,8 @@ func makeTestCurveField(a *big.Int, b *big.Int, r *big.Int, q *big.Int) *CurveFi
 	cfield := new(CurveField)
 	cfield.a = zfield.NewElement(a)
 	cfield.b = zfield.NewElement(b)
-	cfield.order = r
+	cfield.FieldOrder = r
+	cfield.LengthInBytes = getLengthInBytes(cfield)
 
 	return cfield
 }
@@ -136,26 +141,12 @@ func (elem *CurveElement) setInf() {
 	elem.DataY = nil
 }
 
-// satisfy PointLike interface
-func (elem *CurveElement) X() *BigInt {
-	return elem.DataX
-}
-
-func (elem *CurveElement) Y() *BigInt {
-	return elem.DataY
-}
-
-func (elem *CurveElement) String() string {
-	return fmt.Sprintf("[%s],[%s]", elem.DataX.String(), elem.DataY.String())
-}
-
-// don't return elem to emmphasize that call mutates elem
+// don't return elem to emphasize that call mutates elem
 func (elem *CurveElement) freeze() {
 	if elem.isInf() {
 		return // already frozen by def
 	}
-	elem.DataX.freeze()
-	elem.DataY.freeze()
+	elem.PointLike.freeze()
 	return
 }
 
@@ -163,7 +154,7 @@ func (elem *CurveElement) frozen() bool {
 	if (elem.isInf()) {
 		return true
 	}
-	return elem.DataX.frozen && elem.DataY.frozen
+	return elem.PointLike.frozen()
 }
 
 // TODO: for reasons I DO NOT understand, multiplication by a scalar on a curve is pow ...?
@@ -215,7 +206,7 @@ func (elem *CurveElement) dup() *CurveElement {
 }
 
 func (elem *CurveElement) SetToOne() Element {
-	return &CurveElement{elem.ElemField, nil, nil}
+	return &CurveElement{elem.ElemField, PointLike{nil, nil}}
 }
 
 func (elem *CurveElement) Mul(elemIn Element) Element {
@@ -250,7 +241,7 @@ func (elem *CurveElement) twiceInternal() *CurveElement {
 
 	x3.freeze()
 	y3.freeze()
-	return &CurveElement{ elem.ElemField, x3, y3}
+	return &CurveElement{ elem.ElemField, PointLike {x3, y3}}
 }
 
 func (elem *CurveElement) mul(elemIn *CurveElement) *CurveElement {
@@ -270,12 +261,12 @@ func (elem *CurveElement) mul(elemIn *CurveElement) *CurveElement {
 	if elem.DataX.IsEqual(elemIn.DataX) {
 		if elem.DataY.IsEqual(elemIn.DataY) {
 			if elem.DataY.IsEqual(BI_ZERO) {
-				return &CurveElement{elem.ElemField, nil, nil}
+				return &CurveElement{elem.ElemField, PointLike{nil, nil}}
 			} else {
 				return elem.twiceInternal()
 			}
 		}
-		return &CurveElement{elem.ElemField, nil, nil}
+		return &CurveElement{elem.ElemField, PointLike{nil, nil}}
 	}
 
 	// P1 != P2, so the slope of the line L through P1 and P2 is
@@ -294,5 +285,5 @@ func (elem *CurveElement) mul(elemIn *CurveElement) *CurveElement {
 
 	x3.freeze()
 	y3.freeze()
-	return &CurveElement{elem.ElemField, x3, y3}
+	return &CurveElement{elem.ElemField, PointLike {x3, y3}}
 }
