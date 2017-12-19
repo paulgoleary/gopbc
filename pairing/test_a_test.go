@@ -7,7 +7,7 @@ import (
 	"testing"
 )
 
-func testPoint(t *testing.T, thePoint field.PointLike, strExpectX string, strExpectY string) {
+func testPoint(t *testing.T, thePoint field.PointElement, strExpectX string, strExpectY string) {
 
 	checkCoord := func(cmp *field.BigInt, expString string) {
 		expInt := field.MakeBigIntStr(expString, false)

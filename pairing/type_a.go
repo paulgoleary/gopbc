@@ -110,7 +110,7 @@ func (pairing *TypeAPairing) initTypeAPairingFields(params *PairingParameters) {
 func MakeTypeAPairing(params *PairingParameters) *TypeAPairing {
 	pairing := new(TypeAPairing)
 	pairing.initTypeAPairingParams(params)
-	pairing.initTypeAPairingMap(params)
 	pairing.initTypeAPairingFields(params)
+	pairing.initTypeAPairingMap(params)
 	return pairing
 }

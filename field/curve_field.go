@@ -64,7 +64,7 @@ func (field *CurveField) calcYSquared(xIn *BigInt) *BigInt {
 	if !xIn.frozen {
 		panic("xIn needs to be frozen")
 	}
-	return xIn.square(order).add(field.a.Data, order).mul(xIn, order).add(field.b.Data, order)
+	return xIn.Square(order).Add(field.a.Data, order).Mul(xIn, order).Add(field.b.Data, order)
 }
 
 // TODO: needs to account for sign
@@ -130,7 +130,12 @@ func makeTestCurveField(a *big.Int, b *big.Int, r *big.Int, q *big.Int) *CurveFi
 // TODO: Make function?
 
 // validate that CurveElement satisfies Element
-var _ Element = (*CurveElement)(nil)
+var _ PointElement = (*CurveElement)(nil)
+
+func (elem *CurveElement) Negate() PointElement {
+	// TODO !
+	return nil
+}
 
 func (elem *CurveElement) isInf() bool {
 	return elem.DataY == nil && elem.DataY == nil
@@ -179,7 +184,7 @@ func (elem *CurveElement) isValid() bool {
 	}
 
 	calcY2 := elem.ElemField.calcYSquared(elem.DataX)
-	calcY2Check := elem.DataY.square(elem.ElemField.getTargetField().FieldOrder)
+	calcY2Check := elem.DataY.Square(elem.ElemField.getTargetField().FieldOrder)
 
 	return calcY2.IsEqual(calcY2Check)
 }
@@ -228,19 +233,19 @@ func (elem *CurveElement) twiceInternal() *CurveElement {
 	// We have P1 = P2 so the tangent line T at P1 ha slope
 	// lambda = (3x^2 + a) / 2y
 	targetOrder := elem.ElemField.getTargetField().FieldOrder
-	lambdaNumer := elem.DataX.square(targetOrder).mul(BI_THREE, targetOrder).add(elem.ElemField.a.Data, targetOrder)
-	lambdaDenom := elem.DataY.add(elem.DataY, targetOrder).invert(targetOrder)
-	lambda := lambdaNumer.mul(lambdaDenom, targetOrder)
-	lambda.freeze()
+	lambdaNumer := elem.DataX.Square(targetOrder).Mul(BI_THREE, targetOrder).Add(elem.ElemField.a.Data, targetOrder)
+	lambdaDenom := elem.DataY.Add(elem.DataY, targetOrder).invert(targetOrder)
+	lambda := lambdaNumer.Mul(lambdaDenom, targetOrder)
+	lambda.Freeze()
 
 	// x3 = lambda^2 - 2x
-	x3 := lambda.square(targetOrder).sub(elem.DataX.add(elem.DataX, targetOrder), targetOrder)
+	x3 := lambda.Square(targetOrder).Sub(elem.DataX.Add(elem.DataX, targetOrder), targetOrder)
 
 	// y3 = (x - x3) lambda - y
-	y3 := elem.DataX.sub(x3, targetOrder).mul(lambda, targetOrder).sub(elem.DataY, targetOrder)
+	y3 := elem.DataX.Sub(x3, targetOrder).Mul(lambda, targetOrder).Sub(elem.DataY, targetOrder)
 
-	x3.freeze()
-	y3.freeze()
+	x3.Freeze()
+	y3.Freeze()
 	return &CurveElement{ elem.ElemField, PointLike {x3, y3}}
 }
 
@@ -272,18 +277,18 @@ func (elem *CurveElement) mul(elemIn *CurveElement) *CurveElement {
 	// P1 != P2, so the slope of the line L through P1 and P2 is
 	// lambda = (y2-y1)/(x2-x1)
 	targetOrder := elem.ElemField.getTargetField().FieldOrder
-	lambdaNumer := elemIn.DataY.sub(elem.DataY, targetOrder)
-	lambdaDenom := elemIn.DataX.sub(elem.DataX, targetOrder)
-	lambda := lambdaNumer.mul(lambdaDenom.invert(targetOrder), targetOrder)
-	lambda.freeze()
+	lambdaNumer := elemIn.DataY.Sub(elem.DataY, targetOrder)
+	lambdaDenom := elemIn.DataX.Sub(elem.DataX, targetOrder)
+	lambda := lambdaNumer.Mul(lambdaDenom.invert(targetOrder), targetOrder)
+	lambda.Freeze()
 
 	// x3 = lambda^2 - x1 - x2
-	x3 := lambda.square(targetOrder).sub(elem.DataX, targetOrder).sub(elemIn.DataX, targetOrder)
+	x3 := lambda.Square(targetOrder).Sub(elem.DataX, targetOrder).Sub(elemIn.DataX, targetOrder)
 
 	// y3 = (x1-x3) lambda - y1
-	y3 := elem.DataX.sub(x3, targetOrder).mul(lambda, targetOrder).sub(elem.DataY, targetOrder)
+	y3 := elem.DataX.Sub(x3, targetOrder).Mul(lambda, targetOrder).Sub(elem.DataY, targetOrder)
 
-	x3.freeze()
-	y3.freeze()
+	x3.Freeze()
+	y3.Freeze()
 	return &CurveElement{elem.ElemField, PointLike {x3, y3}}
 }

@@ -36,5 +36,5 @@ func NAF(n *big.Int, k int) []int8 {
 
 	length++
 	wnafShort := wnaf[:length]
-	return wnafShort;
+	return wnafShort
 }

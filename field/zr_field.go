@@ -69,6 +69,10 @@ func (field *ZrField) NewZeroElement() *ZrElement {
 	return elem
 }
 
+func (field *ZrField) NewZero() *BigInt {
+	return BI_ZERO // ok to use because it's frozen
+}
+
 func (field *ZrField) NewElement(elemValue *big.Int) *ZrElement {
 	elem := new(ZrElement)
 	elem.ElemField = field

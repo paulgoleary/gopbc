@@ -12,7 +12,10 @@ var THREE = big.NewInt(3)
 
 var BI_ZERO = MakeBigInt(0, true)
 var BI_ONE = MakeBigInt(1, true)
+var BI_TWO = MakeBigInt(2, true)
 var BI_THREE = MakeBigInt(3, true)
+var BI_FOUR = MakeBigInt(4, true)
+var BI_EIGHT = MakeBigInt(8, true)
 
 /*
 	BigInt is intended to represent the base level of integer modular math for field computations.
@@ -34,7 +37,7 @@ func MakeBigIntStr(x string, frozen bool) *BigInt {
 	return &BigInt{ret, frozen}
 }
 
-func (bi *BigInt) freeze() {
+func (bi *BigInt) Freeze() {
 	bi.frozen = true
 	return
 }
@@ -79,7 +82,7 @@ func (bi *BigInt) IsEqual(in *BigInt) bool {
 	return bi.v.Cmp(&in.v) == 0
 }
 
-func (bi *BigInt) add(in *BigInt, modIn *big.Int) *BigInt {
+func (bi *BigInt) Add(in *BigInt, modIn *big.Int) *BigInt {
 	if bi.frozen {
 		bi = bi.copyUnfrozen()
 	}
@@ -87,7 +90,7 @@ func (bi *BigInt) add(in *BigInt, modIn *big.Int) *BigInt {
 	return bi.mod(modIn)
 }
 
-func (bi *BigInt) sub(in *BigInt, modIn *big.Int) *BigInt {
+func (bi *BigInt) Sub(in *BigInt, modIn *big.Int) *BigInt {
 	if bi.frozen {
 		bi = bi.copyUnfrozen()
 	}
@@ -103,7 +106,7 @@ func (bi *BigInt) mod(in *big.Int) *BigInt {
 	return bi
 }
 
-func (bi *BigInt) mul(in *BigInt, modIn *big.Int) *BigInt {
+func (bi *BigInt) Mul(in *BigInt, modIn *big.Int) *BigInt {
 	if bi.frozen {
 		bi = bi.copyUnfrozen()
 	}
@@ -111,7 +114,7 @@ func (bi *BigInt) mul(in *BigInt, modIn *big.Int) *BigInt {
 	return bi.mod(modIn)
 }
 
-func (bi *BigInt) square(modIn *big.Int) *BigInt {
+func (bi *BigInt) Square(modIn *big.Int) *BigInt {
 	if bi.frozen {
 		bi = bi.copyUnfrozen()
 	}
@@ -140,7 +143,7 @@ func (bi *BigInt) negate(modIn *big.Int) *BigInt {
 	if bi.isZero() {
 		return BI_ONE.copyUnfrozen()
 	}
-	return CopyFrom(modIn, false).sub(bi, modIn)
+	return CopyFrom(modIn, false).Sub(bi, modIn)
 }
 
 func (bi *BigInt) String() string {
@@ -183,12 +186,20 @@ func (p *PointLike) String() string {
 }
 
 func (p *PointLike) freeze() {
-	p.DataX.freeze()
-	p.DataY.freeze()
+	p.DataX.Freeze()
+	p.DataY.Freeze()
 }
 
 func (p *PointLike) frozen() bool {
 	return p.DataX.frozen && p.DataY.frozen
+}
+
+func (p *PointLike) X() *BigInt {
+	return p.DataX
+}
+
+func (p *PointLike) Y() *BigInt {
+	return p.DataY
 }
 
 func powWindow(base Element, exp *big.Int) Element {
