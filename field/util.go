@@ -1,6 +1,9 @@
 package field
 
-import "math/big"
+import (
+	"math/big"
+	"fmt"
+)
 
 func NAF(n *big.Int, k int) []int8 {
 
@@ -37,4 +40,11 @@ func NAF(n *big.Int, k int) []int8 {
 	length++
 	wnafShort := wnaf[:length]
 	return wnafShort
+}
+
+func Trace(strs ...fmt.Stringer) {
+	for _, s := range strs {
+		println(s.String())
+	}
+	println()
 }

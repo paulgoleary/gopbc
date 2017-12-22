@@ -153,7 +153,7 @@ func (bi *BigInt) String() string {
 type Field interface {}
 
 type PointField interface {
-	MakeElement() PointElement
+	MakeElement(x *BigInt, y *BigInt) PointElement
 }
 
 type Element interface {
@@ -161,6 +161,7 @@ type Element interface {
 	Copy() Element
 	Mul(Element) Element
 	SetToOne() Element
+	Square() Element
 }
 
 type PointElement interface {
@@ -182,7 +183,7 @@ type PointLike struct {
 }
 
 func (p *PointLike) String() string {
-	return fmt.Sprintf("[%s],[%s]", p.DataX.String(), p.DataY.String())
+	return fmt.Sprintf("[%s,\n%s]", p.DataX.String(), p.DataY.String())
 }
 
 func (p *PointLike) freeze() {

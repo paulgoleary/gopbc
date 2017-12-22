@@ -2,7 +2,7 @@ package pairing
 
 import (
 	"gobdc/field"
-	"math/big"
+	"log"
 )
 
 type Mapping interface  {
@@ -36,13 +36,14 @@ var _ Mapping = (*TypeATateNafProjMillerPairingMap)(nil)
 // TODO !!!
 func (pm *TypeATateNafProjMillerPairingMap) pairing(P field.PointElement, Q field.PointElement) field.Element {
 
-	// f := pm.Fq2.MakeElement().SetToOne()
+	// TODO: maybe an explicit make for one element so we don't need to pass in nil's ?
+	f := pm.Fq2.MakeElement(nil, nil).SetToOne()
 	// u := pm.Fq2.MakeElement()
 
 	// JacobPoint V = new JacobPoint(P.getX(), P.getY(), P.getX().getField().newOneElement());
 	V := &JacobPoint{field.PointLike{P.X(), P.Y()}, field.BI_ONE}
 
-	// nP := P.Negate()
+	nP := P.Negate()
 
 	// Element a = this.pairing.Fp.newElement();
 	// Element b = this.pairing.Fp.newElement();
@@ -55,7 +56,25 @@ func (pm *TypeATateNafProjMillerPairingMap) pairing(P field.PointElement, Q fiel
 	var a, b, c *field.BigInt
 	for i := len(pm.rNAF) - 2; i >= 0; i-- {
 		V, a, b, c = pm.twice(V)
-		pm.millerStep(&V.PointLike, a, b, c, Q.X(), Q.Y())
+		field.Trace(V, a, b, c)
+		u := pm.millerStep(a, b, c, Q.X(), Q.Y())
+		field.Trace(u, a, b, c)
+		f = f.Square().Mul(u)
+		field.Trace(f, a, b, c)
+
+		switch rn := pm.rNAF[i]; rn {
+		case -1, 1:
+			if rn == -1 {
+				pm.add(V, nP, a, b, c)
+			} else {
+				pm.add(V, P, a, b, c)
+			}
+			u = pm.millerStep(a, b, c, Q.X(), Q.Y())
+			f = f.Mul(u)
+		case 0: // NOP
+		default:
+			log.Panicf("this should not happen")
+		}
 	}
 
 	/*
@@ -88,7 +107,7 @@ func (pm *TypeATateNafProjMillerPairingMap) twice(V *JacobPoint) (*JacobPoint, *
 	// Element y = V.getY();
 	// Element z = V.getZ();
 
-	// TODO: validate frozen?
+	// TODO: validate frozen? why not just just freeze? can't hurt ...
 	t1 := V.DataY.Square(targetOrder)
 	t1.Freeze()
 	t2 := V.DataX.Mul(t1, targetOrder).Mul(field.BI_FOUR, targetOrder)
@@ -116,15 +135,28 @@ func (pm *TypeATateNafProjMillerPairingMap) twice(V *JacobPoint) (*JacobPoint, *
 	// a.mul(b);
 	// b.mul(z);
 
+	V.freeze()
+	a.Freeze()
+	b.Freeze()
+	c.Freeze()
 	return V, a, b, c
 }
 
-func (pm *TypeATateNafProjMillerPairingMap) millerStep(out *field.PointLike, a, b, c, Qx, Qy *field.BigInt) {
+// we mutate `out` in place here
+func (pm *TypeATateNafProjMillerPairingMap) millerStep(a, b, c, Qx, Qy *field.BigInt) field.PointElement {
+	a.Freeze()
+	b.Freeze()
+	c.Freeze()
 	targetOrder := pm.Fq.FieldOrder
-	a.Freeze() // should already be frozen - but doesn't hurt
-	out.DataX = c.Add(a.Mul(Qx, targetOrder), targetOrder)
-	out.DataY = b.Mul(Qy, targetOrder) // TODO: is b supposed to be mutated?
+	x := c.Add(a.Mul(Qx, targetOrder), targetOrder)
+	y := b.Mul(Qy, targetOrder)
+	return pm.Fq2.MakeElement(x, y)
 
 	// out.getX().set(c).add(a.duplicate().mul(Qx));
 	// out.getY().set(b).mul(Qy);
+}
+
+// final void add(JacobPoint V, Point P, Element a, Element b, Element c) {
+func (pm *TypeATateNafProjMillerPairingMap) add(V *JacobPoint, P field.PointElement , a *field.BigInt, b *field.BigInt, c *field.BigInt) {
+	// TODO !!!
 }

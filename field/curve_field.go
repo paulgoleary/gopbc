@@ -137,6 +137,11 @@ func (elem *CurveElement) Negate() PointElement {
 	return nil
 }
 
+func (elem *CurveElement) Square() Element {
+	// TODO !
+	return nil
+}
+
 func (elem *CurveElement) isInf() bool {
 	return elem.DataY == nil && elem.DataY == nil
 }

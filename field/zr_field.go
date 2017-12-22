@@ -46,6 +46,11 @@ func (elem ZrElement) SetToOne() Element {
 	return elem
 }
 
+// TODO
+func (elem ZrElement) Square() Element {
+	return elem
+}
+
 // ZrField
 
 func MakeZrField(fieldOrder *big.Int) *ZrField {
