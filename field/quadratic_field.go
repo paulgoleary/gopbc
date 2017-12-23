@@ -18,11 +18,11 @@ type D2ExtensionQuadElement struct {
 }
 
 func (elem *D2ExtensionQuadElement) X() *BigInt {
-	return elem.DataX
+	return elem.dataX
 }
 
 func (elem *D2ExtensionQuadElement) Y() *BigInt {
-	return elem.DataY
+	return elem.dataY
 }
 
 // TODO !!!
@@ -39,8 +39,8 @@ func (elem *D2ExtensionQuadElement) Copy() Element {
 func (elem *D2ExtensionQuadElement) dup() *D2ExtensionQuadElement {
 	newElem := new(D2ExtensionQuadElement)
 	newElem.ElemField = elem.ElemField
-	newElem.DataX = elem.DataX.copy()
-	newElem.DataY = elem.DataY.copy()
+	newElem.dataX = elem.dataX.copy()
+	newElem.dataY = elem.dataY.copy()
 	return newElem
 }
 
@@ -60,8 +60,8 @@ func (elem *D2ExtensionQuadElement) Square() Element {
 	 */
 
 	targetOrder := elem.ElemField.targetField.FieldOrder // TODO: verify
-	e0 := elem.DataX.Add(elem.DataY, targetOrder).Mul(elem.DataX.Sub(elem.DataY, targetOrder), targetOrder)
-	e1 := elem.DataX.Mul(elem.DataY, targetOrder).Mul(BI_TWO, targetOrder)
+	e0 := elem.dataX.Add(elem.dataY, targetOrder).Mul(elem.dataX.Sub(elem.dataY, targetOrder), targetOrder)
+	e1 := elem.dataX.Mul(elem.dataY, targetOrder).Mul(BI_TWO, targetOrder)
 	return elem.ElemField.MakeElement(e0, e1)
 }
 
@@ -86,9 +86,9 @@ func (elem *D2ExtensionQuadElement) Mul(elemIn Element) Element {
 
 	targetOrder := elem.ElemField.targetField.FieldOrder // TODO - verify !
 	d2xqeIn := elemIn.(*D2ExtensionQuadElement) // curses!!! was hoping to avoid this :/
-	e2 := elem.DataX.Add(elem.DataY, targetOrder).Mul(d2xqeIn.DataX.Add(d2xqeIn.DataY, targetOrder), targetOrder)
-	e0 := elem.DataX.Mul(d2xqeIn.DataX, targetOrder)
-	e1 := elem.DataY.Mul(d2xqeIn.DataY, targetOrder)
+	e2 := elem.dataX.Add(elem.dataY, targetOrder).Mul(d2xqeIn.dataX.Add(d2xqeIn.dataY, targetOrder), targetOrder)
+	e0 := elem.dataX.Mul(d2xqeIn.dataX, targetOrder)
+	e1 := elem.dataY.Mul(d2xqeIn.dataY, targetOrder)
 	e2 = e2.Sub(e0, targetOrder)
 	return elem.ElemField.MakeElement(e0.Sub(e1, targetOrder), e2.Sub(e1, targetOrder))
 }

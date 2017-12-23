@@ -6,16 +6,17 @@ import (
 )
 
 type JacobPoint struct {
-	field.PointLike
+	x *field.BigInt
+	y *field.BigInt
 	z *field.BigInt
 }
 
 func (jp *JacobPoint) String() string {
-	return fmt.Sprintf("[%s,\n%s,\n%s]", jp.DataX.String(), jp.DataY.String(), jp.z.String())
+	return fmt.Sprintf("[%s,\n%s,\n%s]", jp.x.String(), jp.y.String(), jp.z.String())
 }
 
 func (jp *JacobPoint) freeze() {
-	jp.DataX.Freeze()
-	jp.DataY.Freeze()
+	jp.x.Freeze()
+	jp.y.Freeze()
 	jp.z.Freeze()
 }

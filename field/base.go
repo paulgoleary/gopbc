@@ -28,7 +28,7 @@ type BigInt struct {
 }
 
 func MakeBigInt(x int64, frozen bool) *BigInt {
-	return &BigInt{ *big.NewInt(x), frozen  }
+	return &BigInt{ *big.NewInt(x), frozen}
 }
 
 func MakeBigIntStr(x string, frozen bool) *BigInt {
@@ -178,29 +178,29 @@ type BaseField struct {
 }
 
 type PointLike struct {
-	DataX *BigInt
-	DataY *BigInt
+	dataX *BigInt
+	dataY *BigInt
 }
 
 func (p *PointLike) String() string {
-	return fmt.Sprintf("[%s,\n%s]", p.DataX.String(), p.DataY.String())
+	return fmt.Sprintf("[%s,\n%s]", p.dataX.String(), p.dataY.String())
 }
 
 func (p *PointLike) freeze() {
-	p.DataX.Freeze()
-	p.DataY.Freeze()
+	p.dataX.Freeze()
+	p.dataY.Freeze()
 }
 
 func (p *PointLike) frozen() bool {
-	return p.DataX.frozen && p.DataY.frozen
+	return p.dataX.frozen && p.dataY.frozen
 }
 
 func (p *PointLike) X() *BigInt {
-	return p.DataX
+	return p.dataX
 }
 
 func (p *PointLike) Y() *BigInt {
-	return p.DataY
+	return p.dataY
 }
 
 func powWindow(base Element, exp *big.Int) Element {

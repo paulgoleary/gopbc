@@ -40,6 +40,12 @@ func (elem *TestElement) String() string {
 	return elem.data.String()
 }
 
+// stub impl - don't need it for testing
+func (elem *TestElement) Square() Element {
+	return nil
+}
+
+
 // validate that TestElement satisfies Element interface
 var _ Element = (*TestElement)(nil)
 
@@ -117,18 +123,18 @@ func TestBigIntMath(t *testing.T) {
 	testMod := big.NewInt(1000003) // need an odd prime or mod sqrt panics
 
 	// expect test100 to mutate
-	test100.add(test200, testMod)
+	test100.Add(test200, testMod)
 	if !test100.IsEqual(MakeBigInt(300, false)) {
 		t.Errorf("Addition failed: expected 300, got %s", test100.String())
 	}
 
 	// reset to 100 - frozen
 	test100 = MakeBigInt(100, true)
-	testFrozeness(t, test100, MakeBigInt(200, false), func(x *BigInt) *BigInt { return x.add(test100, testMod) } )
-	testFrozeness(t, test100, MakeBigInt(0, false), func(x *BigInt) *BigInt { return x.sub(test100, testMod) } )
+	testFrozeness(t, test100, MakeBigInt(200, false), func(x *BigInt) *BigInt { return x.Add(test100, testMod) } )
+	testFrozeness(t, test100, MakeBigInt(0, false), func(x *BigInt) *BigInt { return x.Sub(test100, testMod) } )
 	testFrozeness(t, test100, MakeBigInt(100, false), func(x *BigInt) *BigInt { return x.mod(testMod) } )
-	testFrozeness(t, test100, MakeBigInt(10000, false), func(x *BigInt) *BigInt { return x.mul(test100, testMod) } )
-	testFrozeness(t, test100, MakeBigInt(10000, false), func(x *BigInt) *BigInt { return x.square(testMod) } )
+	testFrozeness(t, test100, MakeBigInt(10000, false), func(x *BigInt) *BigInt { return x.Mul(test100, testMod) } )
+	testFrozeness(t, test100, MakeBigInt(10000, false), func(x *BigInt) *BigInt { return x.Square(testMod) } )
 	testFrozeness(t, test100, MakeBigInt(10, false), func(x *BigInt) *BigInt { return x.sqrt(testMod) } )
 	testFrozeness(t, test100, MakeBigInt(330001, false), func(x *BigInt) *BigInt { return x.invert(testMod) } )
 }

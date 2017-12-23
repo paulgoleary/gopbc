@@ -41,7 +41,7 @@ func (pm *TypeATateNafProjMillerPairingMap) pairing(P field.PointElement, Q fiel
 	// u := pm.Fq2.MakeElement()
 
 	// JacobPoint V = new JacobPoint(P.getX(), P.getY(), P.getX().getField().newOneElement());
-	V := &JacobPoint{field.PointLike{P.X(), P.Y()}, field.BI_ONE}
+	V := &JacobPoint{P.X(), P.Y(), field.BI_ONE}
 
 	nP := P.Negate()
 
@@ -64,6 +64,7 @@ func (pm *TypeATateNafProjMillerPairingMap) pairing(P field.PointElement, Q fiel
 
 		switch rn := pm.rNAF[i]; rn {
 		case -1, 1:
+			field.Trace(V, a, b, c)
 			if rn == -1 {
 				pm.add(V, nP, a, b, c)
 			} else {
@@ -108,19 +109,19 @@ func (pm *TypeATateNafProjMillerPairingMap) twice(V *JacobPoint) (*JacobPoint, *
 	// Element z = V.getZ();
 
 	// TODO: validate frozen? why not just just freeze? can't hurt ...
-	t1 := V.DataY.Square(targetOrder)
+	t1 := V.y.Square(targetOrder)
 	t1.Freeze()
-	t2 := V.DataX.Mul(t1, targetOrder).Mul(field.BI_FOUR, targetOrder)
+	t2 := V.x.Mul(t1, targetOrder).Mul(field.BI_FOUR, targetOrder)
 	t2.Freeze()
 
 	b := V.z.Square(targetOrder)
 	b.Freeze()
-	a := V.DataX.Square(targetOrder).Mul(field.BI_THREE, targetOrder).Add(b.Square(targetOrder), targetOrder)
+	a := V.x.Square(targetOrder).Mul(field.BI_THREE, targetOrder).Add(b.Square(targetOrder), targetOrder)
 	a.Freeze()
-	c := a.Mul(V.DataX, targetOrder).Sub(t1, targetOrder).Sub(t1, targetOrder)
-	V.z = V.z.Mul(V.DataY, targetOrder).Mul(field.BI_TWO, targetOrder)
-	V.DataX = a.Square(targetOrder).Sub(t2.Mul(field.BI_TWO, targetOrder), targetOrder)
-	V.DataY = a.Mul(t2.Sub(V.DataX, targetOrder), targetOrder).Sub(t1.Square(targetOrder).Mul(field.BI_EIGHT, targetOrder), targetOrder)
+	c := a.Mul(V.x, targetOrder).Sub(t1, targetOrder).Sub(t1, targetOrder)
+	V.z = V.z.Mul(V.y, targetOrder).Mul(field.BI_TWO, targetOrder)
+	V.x = a.Square(targetOrder).Sub(t2.Mul(field.BI_TWO, targetOrder), targetOrder)
+	V.y = a.Mul(t2.Sub(V.x, targetOrder), targetOrder).Sub(t1.Square(targetOrder).Mul(field.BI_EIGHT, targetOrder), targetOrder)
 	a = a.Mul(b, targetOrder)
 	b = b.Mul(V.z, targetOrder)
 

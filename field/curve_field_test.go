@@ -90,14 +90,14 @@ func TestCurveBasics(t *testing.T) {
 
 	testYFromX := func( xStr string, expectedYStr string ) {
 		testElem := testField.newElementFromStrings(xStr, expectedYStr)
-		testCalc := testField.newElementFromX(&testElem.DataX.v)
+		testCalc := testField.newElementFromX(&testElem.dataX.v)
 
-		if !testCalc.DataY.IsEqual(testElem.DataY) {
+		if !testCalc.dataY.IsEqual(testElem.dataY) {
 			// need to test the negative as well
 			// TODO: need to account for sign in newElementFromX
-			negY := testCalc.DataY.negate(testField.getTargetField().FieldOrder)
-			if !negY.IsEqual(testElem.DataY) {
-				t.Errorf("Failed to derive Y from X: expected %s, got %s", expectedYStr, testCalc.DataY.String())
+			negY := testCalc.dataY.negate(testField.getTargetField().FieldOrder)
+			if !negY.IsEqual(testElem.dataY) {
+				t.Errorf("Failed to derive Y from X: expected %s, got %s", expectedYStr, testCalc.dataY.String())
 			}
 		}
 	}
