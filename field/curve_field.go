@@ -5,16 +5,20 @@ import (
 )
 
 type CurveField struct {
-	BaseField
-	a          *ZrElement
-	b          *ZrElement
+	CurveParams
 	cofactor   *big.Int      // TODO: do we need this ...?
 	gen        *CurveElement // TODO: not sure here...
 	genNoCofac *CurveElement // TODO: don't need this ...?
 }
 
+type CurveParams struct {
+	BaseField
+	a          *ZrElement
+	b          *ZrElement
+}
+
 type CurveElement struct {
-	ElemField *CurveField
+	elemParams *CurveParams
 	PointLike
 }
 
@@ -34,8 +38,8 @@ func (field *CurveField) GetGen() *CurveElement {
 	return field.gen
 }
 
-func (field *CurveField) getTargetField() *ZrField {
-	return field.a.ElemField
+func (curveParams *CurveParams) getTargetField() *ZrField {
+	return curveParams.a.ElemField
 }
 
 func (field *CurveField) newElementFromBytes(elemBytes *[]byte) *CurveElement {
@@ -49,7 +53,7 @@ func (field *CurveField) newElementFromBytes(elemBytes *[]byte) *CurveElement {
 	dataY := new(BigInt)
 	dataY.setBytes(yBytes)
 
-	elem := &CurveElement{ field, PointLike{dataX, dataY}}
+	elem := &CurveElement{ &field.CurveParams, PointLike{dataX, dataY}}
 
 	// needs to be frozen before validation
 	elem.freeze()
@@ -60,33 +64,29 @@ func (field *CurveField) newElementFromBytes(elemBytes *[]byte) *CurveElement {
 }
 
 // general curve is y^2 = x^3 + ax + b
-func (field *CurveField) calcYSquared(xIn *BigInt) *BigInt {
-	order := field.getTargetField().FieldOrder
+func (params *CurveParams) calcYSquared(xIn *BigInt) *BigInt {
+	order := params.getTargetField().FieldOrder
 	if !xIn.frozen {
 		panic("xIn needs to be frozen")
 	}
-	return xIn.Square(order).Add(field.a.Data, order).Mul(xIn, order).Add(field.b.Data, order)
+	return xIn.Square(order).Add(params.a.Data, order).Mul(xIn, order).Add(params.b.Data, order)
 }
 
 // TODO: needs to account for sign
 func (field *CurveField) newElementFromX(x *big.Int) *CurveElement {
 
-	elem := CurveElement{ElemField: field}
-
 	copyX := CopyFrom(x, true)
 	calcY2 := field.calcYSquared(copyX)
-	elem.dataY = calcY2.sqrt(field.getTargetField().FieldOrder)
-	elem.dataX = copyX
+	dataY := calcY2.sqrt(field.getTargetField().FieldOrder)
+
+	elem := CurveElement{&field.CurveParams, PointLike{copyX, dataY}}
 
 	elem.freeze()
 	return &elem
 }
 
 func (field *CurveField) newElementFromStrings(xStr string, yStr string) *CurveElement {
-	elem := CurveElement{ElemField: field}
-	elem.dataX = MakeBigIntStr(xStr, true)
-	elem.dataY = MakeBigIntStr(yStr, true)
-	return &elem
+	return &CurveElement{&field.CurveParams, PointLike{MakeBigIntStr(xStr, true), MakeBigIntStr(yStr, true)}}
 }
 
 func getLengthInBytes( field *CurveField ) int {
@@ -133,12 +133,17 @@ func makeTestCurveField(a *big.Int, b *big.Int, r *big.Int, q *big.Int) *CurveFi
 // validate that CurveElement satisfies Element
 var _ PointElement = (*CurveElement)(nil)
 
+func (elem *CurveElement) getTargetOrder() *big.Int {
+	return elem.elemParams.getTargetField().FieldOrder
+}
+
 func (elem *CurveElement) Negate() PointElement {
 	if elem.isInf() {
-		return &CurveElement{elem.ElemField, PointLike{nil, nil}}
+		return &CurveElement{elem.elemParams, PointLike{nil, nil}}
 	}
-	yNeg := elem.dataY.negate(elem.ElemField.FieldOrder)
-	return &CurveElement{elem.ElemField, PointLike{elem.dataX, yNeg}}
+	elem.PointLike.freeze() // make sure we're frozen
+	yNeg := elem.dataY.negate(elem.getTargetOrder())
+	return &CurveElement{elem.elemParams, PointLike{elem.dataX, yNeg}}
 }
 
 func (elem *CurveElement) Square() Element {
@@ -192,8 +197,8 @@ func (elem *CurveElement) isValid() bool {
 		return true
 	}
 
-	calcY2 := elem.ElemField.calcYSquared(elem.dataX)
-	calcY2Check := elem.dataY.Square(elem.ElemField.getTargetField().FieldOrder)
+	calcY2 := elem.elemParams.calcYSquared(elem.dataX)
+	calcY2Check := elem.dataY.Square(elem.getTargetOrder())
 
 	return calcY2.IsEqual(calcY2Check)
 }
@@ -213,14 +218,14 @@ func (elem *CurveElement) Copy() Element {
 
 func (elem *CurveElement) dup() *CurveElement {
 	newElem := new(CurveElement)
-	newElem.ElemField = elem.ElemField
+	newElem.elemParams = elem.elemParams
 	newElem.dataX = elem.dataX.copy()
 	newElem.dataY = elem.dataY.copy()
 	return newElem
 }
 
 func (elem *CurveElement) SetToOne() Element {
-	return &CurveElement{elem.ElemField, PointLike{nil, nil}}
+	return &CurveElement{elem.elemParams, PointLike{nil, nil}}
 }
 
 func (elem *CurveElement) Mul(elemIn Element) Element {
@@ -241,8 +246,8 @@ func (elem *CurveElement) twiceInternal() *CurveElement {
 
 	// We have P1 = P2 so the tangent line T at P1 ha slope
 	// lambda = (3x^2 + a) / 2y
-	targetOrder := elem.ElemField.getTargetField().FieldOrder
-	lambdaNumer := elem.dataX.Square(targetOrder).Mul(BI_THREE, targetOrder).Add(elem.ElemField.a.Data, targetOrder)
+	targetOrder := elem.getTargetOrder()
+	lambdaNumer := elem.dataX.Square(targetOrder).Mul(BI_THREE, targetOrder).Add(elem.elemParams.a.Data, targetOrder)
 	lambdaDenom := elem.dataY.Add(elem.dataY, targetOrder).invert(targetOrder)
 	lambda := lambdaNumer.Mul(lambdaDenom, targetOrder)
 	lambda.Freeze()
@@ -255,7 +260,7 @@ func (elem *CurveElement) twiceInternal() *CurveElement {
 
 	x3.Freeze()
 	y3.Freeze()
-	return &CurveElement{ elem.ElemField, PointLike {x3, y3}}
+	return &CurveElement{ elem.elemParams, PointLike {x3, y3}}
 }
 
 func (elem *CurveElement) mul(elemIn *CurveElement) *CurveElement {
@@ -275,17 +280,17 @@ func (elem *CurveElement) mul(elemIn *CurveElement) *CurveElement {
 	if elem.dataX.IsEqual(elemIn.dataX) {
 		if elem.dataY.IsEqual(elemIn.dataY) {
 			if elem.dataY.IsEqual(BI_ZERO) {
-				return &CurveElement{elem.ElemField, PointLike{nil, nil}}
+				return &CurveElement{elem.elemParams, PointLike{nil, nil}}
 			} else {
 				return elem.twiceInternal()
 			}
 		}
-		return &CurveElement{elem.ElemField, PointLike{nil, nil}}
+		return &CurveElement{elem.elemParams, PointLike{nil, nil}}
 	}
 
 	// P1 != P2, so the slope of the line L through P1 and P2 is
 	// lambda = (y2-y1)/(x2-x1)
-	targetOrder := elem.ElemField.getTargetField().FieldOrder
+	targetOrder := elem.getTargetOrder()
 	lambdaNumer := elemIn.dataY.Sub(elem.dataY, targetOrder)
 	lambdaDenom := elemIn.dataX.Sub(elem.dataX, targetOrder)
 	lambda := lambdaNumer.Mul(lambdaDenom.invert(targetOrder), targetOrder)
@@ -299,5 +304,5 @@ func (elem *CurveElement) mul(elemIn *CurveElement) *CurveElement {
 
 	x3.Freeze()
 	y3.Freeze()
-	return &CurveElement{elem.ElemField, PointLike {x3, y3}}
+	return &CurveElement{elem.elemParams, PointLike {x3, y3}}
 }

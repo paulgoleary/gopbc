@@ -23,6 +23,7 @@ type TypeAPairing struct {
 	BasePairing
 	Fq *field.ZrField
 	Fq2 *field.D2ExtensionQuadField
+	phikOnr *big.Int
 }
 
 func (pairing *TypeAPairing) initTypeAPairingParams(params *PairingParameters) {
@@ -55,8 +56,6 @@ func (pairing *TypeAPairing) initTypeAPairingMap(params *PairingParameters) {
 	}
 
 	pairing.mapping = MakeTypeATateNafProjMillerPairingMap(pairing)
-
-
 
 }
 
@@ -99,7 +98,7 @@ func (pairing *TypeAPairing) initTypeAPairingFields(params *PairingParameters) {
 	pairing.Fq2 = field.MakeD2ExtensionQuadField(pairing.Fq)
 
 	// k=2, hence phi_k(q) = q + 1, phikOnr = (q+1)/r
-	// phikOnr = h;
+	pairing.phikOnr = pairing.h
 
 	// Init G1, G2, GT
 	pairing.G1 = pairing.makeEq()

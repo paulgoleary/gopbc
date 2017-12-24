@@ -3,6 +3,7 @@ package pairing
 import (
 	"gobdc/field"
 	"log"
+	"math/big"
 )
 
 type Mapping interface  {
@@ -44,6 +45,7 @@ func (pm *TypeATateNafProjMillerPairingMap) pairing(P field.PointElement, Q fiel
 	V := &JacobPoint{P.X(), P.Y(), field.BI_ONE}
 
 	nP := P.Negate()
+	field.Trace(nP)
 
 	// Element a = this.pairing.Fp.newElement();
 	// Element b = this.pairing.Fp.newElement();
@@ -66,12 +68,14 @@ func (pm *TypeATateNafProjMillerPairingMap) pairing(P field.PointElement, Q fiel
 		case -1, 1:
 			field.Trace(V, a, b, c)
 			if rn == -1 {
-				pm.add(V, nP, a, b, c)
+				V, a, b, c = pm.add(V, nP)
 			} else {
-				pm.add(V, P, a, b, c)
+				V, a, b, c = pm.add(V, P)
 			}
+			field.Trace(V, a, b, c)
 			u = pm.millerStep(a, b, c, Q.X(), Q.Y())
 			f = f.Mul(u)
+			field.Trace(f)
 		case 0: // NOP
 		default:
 			log.Panicf("this should not happen")
@@ -96,6 +100,15 @@ func (pm *TypeATateNafProjMillerPairingMap) pairing(P field.PointElement, Q fiel
 	}
 	}
 	*/
+
+	field.Trace(f)
+	/*
+	    Point out = (Point)this.pairing.Fq2.newElement();
+    this.tatePow(out, f, this.pairing.phikOnr);
+    return new GTFiniteElement(this, (GTFiniteField)this.pairing.getGT(), out);
+	 */
+
+	 pm.tatePow(f, pm.phikOnr)
 
 	return nil
 }
@@ -157,7 +170,58 @@ func (pm *TypeATateNafProjMillerPairingMap) millerStep(a, b, c, Qx, Qy *field.Bi
 	// out.getY().set(b).mul(Qy);
 }
 
-// final void add(JacobPoint V, Point P, Element a, Element b, Element c) {
-func (pm *TypeATateNafProjMillerPairingMap) add(V *JacobPoint, P field.PointElement , a *field.BigInt, b *field.BigInt, c *field.BigInt) {
-	// TODO !!!
+func (pm *TypeATateNafProjMillerPairingMap) add(V *JacobPoint, P field.PointElement) (*JacobPoint, *field.BigInt, *field.BigInt, *field.BigInt) {
+
+	targetOrder := pm.Fq.FieldOrder
+	// V is used, mutated and returned
+	// P is used but *not* returned
+	// a, b, c are returned but *not* used
+
+	V.freeze() // make sure V is frozen
+	// P should be frozen because it's an Element
+
+    t1 := V.z.Square(targetOrder)
+    t2 := V.z.Mul(t1, targetOrder)
+    t3 := P.X().Mul(t1, targetOrder)
+    t3.Freeze()
+    t4 := P.Y().Mul(t2, targetOrder)
+    t4.Freeze()
+    t5 := t3.Sub(V.x, targetOrder)
+    t5.Freeze()
+    t6 := t4.Sub(V.y, targetOrder)
+    t6.Freeze()
+    t7 := t5.Square(targetOrder)
+    t8 := t5.Mul(t7, targetOrder)
+    t8.Freeze()
+    t9 := V.x.Mul(t7, targetOrder)
+    t9.Freeze()
+    x3 := t6.Square(targetOrder).Sub(t8.Add(t9.Mul(field.BI_TWO, targetOrder), targetOrder), targetOrder)
+    y3 := t6.Mul(t9.Sub(x3, targetOrder), targetOrder).Sub(V.y.Mul(t8, targetOrder), targetOrder)
+    z3 := V.z.Mul(t5, targetOrder)
+
+    V.x = x3
+    V.y = y3
+    V.z = z3
+    V.freeze()
+
+    a := t6
+    b := z3
+    c := t6.Mul( P.X(), targetOrder).Sub(z3.Mul(P.Y(), targetOrder), targetOrder) // z3 is frozen through V
+
+    return V, a, b, c
+}
+
+/*
+  final void tatePow(Point out, Point in, BigInteger cofactor) {
+    Element in1 = in.getY();
+    Point temp = (Point)in.duplicate().invert();
+    in1.negate();
+    in.mul(temp);
+    this.lucasOdd(out, in, temp, cofactor);
+  }
+
+ */
+
+func (pm *TypeATateNafProjMillerPairingMap) tatePow(in field.PointElement, cofactor *big.Int) field.PointElement {
+	return nil
 }
