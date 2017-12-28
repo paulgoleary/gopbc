@@ -156,20 +156,27 @@ type PointField interface {
 	MakeElement(x *BigInt, y *BigInt) PointElement
 }
 
+type PowElement interface {
+	String() string
+	CopyPow() PowElement
+	MakeOnePow() PowElement
+	MulPow(PowElement) PowElement
+}
+
 type Element interface {
 	String() string
 	Copy() Element
 	Mul(Element) Element
-	SetToOne() Element
-	Square() Element
 }
 
 type PointElement interface {
-	Element
+	String() string
 	X() *BigInt
 	Y() *BigInt
-	NegateP() PointElement
-	InvertP() PointElement
+	Negate() PointElement
+	Invert() PointElement
+	MulPoint(PointElement) PointElement
+	Square() PointElement
 }
 
 type MakeElementFunc func() Element
@@ -204,10 +211,10 @@ func (p *PointLike) Y() *BigInt {
 	return p.dataY
 }
 
-func powWindow(base Element, exp *big.Int) Element {
+func powWindow(base PowElement, exp *big.Int) PowElement {
 
 	// note: does not mutate base
-	result := base.SetToOne()
+	result := base.MakeOnePow()
 
 	if exp.Sign() == 0 {
 		return result
@@ -221,7 +228,7 @@ func powWindow(base Element, exp *big.Int) Element {
 
 	inWord := false
 	for s := exp.BitLen() - 1; s >= 0; s-- {
-		result = result.Mul(result)
+		result = result.MulPow(result)
 
 		bit := exp.Bit(s)
 
@@ -239,7 +246,7 @@ func powWindow(base Element, exp *big.Int) Element {
 		}
 
 		if wordBits == k || s == 0 {
-			result = result.Mul((*lookups)[word])
+			result = result.MulPow((*lookups)[word])
 			inWord = false
 		}
 	}
@@ -269,20 +276,20 @@ func optimalPowWindowSize(exp *big.Int) uint {
 	}
 }
 
-func buildPowWindow(k uint, base Element) *[]Element {
+func buildPowWindow(k uint, base PowElement) *[]PowElement {
 
 	if k < 1 {
 		return nil
 	}
 
 	lookupSize := 1 << k
-	lookups := make([]Element, lookupSize)
+	lookups := make([]PowElement, lookupSize)
 
-	// SetToOne copies ...
-	lookups[0] = base.SetToOne()
+	// MakeOnePow copies ...
+	lookups[0] = base.MakeOnePow()
 	for x := 1; x < lookupSize; x++ {
-		newLookup := lookups[x-1].Copy()
-		lookups[x] = newLookup.Mul(base)
+		newLookup := lookups[x-1].CopyPow()
+		lookups[x] = newLookup.MulPow(base)
 	}
 
 	return &lookups

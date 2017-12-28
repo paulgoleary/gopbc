@@ -42,11 +42,6 @@ func (elem ZrElement) Mul(Element) Element {
 }
 
 // TODO
-func (elem ZrElement) SetToOne() Element {
-	return elem
-}
-
-// TODO
 func (elem ZrElement) Square() Element {
 	return elem
 }

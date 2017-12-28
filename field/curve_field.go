@@ -130,14 +130,14 @@ func makeTestCurveField(a *big.Int, b *big.Int, r *big.Int, q *big.Int) *CurveFi
 
 // TODO: Make function?
 
-// validate that CurveElement satisfies Element
 var _ PointElement = (*CurveElement)(nil)
+var _ PowElement = (*CurveElement)(nil)
 
 func (elem *CurveElement) getTargetOrder() *big.Int {
 	return elem.elemParams.getTargetField().FieldOrder
 }
 
-func (elem *CurveElement) NegateP() PointElement {
+func (elem *CurveElement) Negate() PointElement {
 	if elem.isInf() {
 		return &CurveElement{elem.elemParams, PointLike{nil, nil}}
 	}
@@ -146,11 +146,11 @@ func (elem *CurveElement) NegateP() PointElement {
 	return &CurveElement{elem.elemParams, PointLike{elem.dataX, yNeg}}
 }
 
-func (elem *CurveElement) InvertP() PointElement {
+func (elem *CurveElement) Invert() PointElement {
 	return nil // TODO!
 }
 
-func (elem *CurveElement) Square() Element {
+func (elem *CurveElement) Square() PointElement {
 	// TODO !
 	return nil
 }
@@ -214,7 +214,7 @@ func (elem *CurveElement) isEqual(cmpElem *CurveElement) bool {
 	return elem.dataY.IsEqual(cmpElem.dataY)
 }
 
-func (elem *CurveElement) Copy() Element {
+func (elem *CurveElement) CopyPow() PowElement {
 	theCopy := elem.dup()
 	theCopy.freeze()
 	return theCopy
@@ -228,11 +228,16 @@ func (elem *CurveElement) dup() *CurveElement {
 	return newElem
 }
 
-func (elem *CurveElement) SetToOne() Element {
+func (elem *CurveElement) MakeOnePow() PowElement {
 	return &CurveElement{elem.elemParams, PointLike{nil, nil}}
 }
 
-func (elem *CurveElement) Mul(elemIn Element) Element {
+func (elem *CurveElement) MulPoint(elemIn PointElement) PointElement {
+	res := elem.mul(elemIn.(*CurveElement))
+	return res
+}
+
+func (elem *CurveElement) MulPow(elemIn PowElement) PowElement {
 	res := elem.mul(elemIn.(*CurveElement))
 	return res
 }

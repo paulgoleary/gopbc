@@ -58,7 +58,7 @@ func TestCurveSpec(t *testing.T) {
 	}
 
 	testElem2 := testField.newElementFromX(TWO)
-	testMul2 := testElem2.Mul(testElem2) // multiply by self - internally hits twiceInternal()
+	testMul2 := testElem2.MulPow(testElem2) // multiply by self - internally hits twiceInternal()
 	if testElem2.isEqual(testMul2.(*CurveElement)) {
 		t.Errorf("Failed invariance check - testElem2 should not change")
 	}
@@ -71,7 +71,7 @@ func TestCurveSpec(t *testing.T) {
 	}
 
 	testElem3 := testField.newElementFromX(THREE)
-	testMul3 := testElem3.Mul(testElem2) // general multiplication
+	testMul3 := testElem3.MulPow(testElem2) // general multiplication
 	if testElem3.isEqual(testMul3.(*CurveElement)) {
 		t.Errorf("Failed invariance check - testElem3 should not change")
 	}
@@ -95,7 +95,7 @@ func TestCurveBasics(t *testing.T) {
 		if !testCalc.dataY.IsEqual(testElem.dataY) {
 			// need to test the negative as well
 			// TODO: need to account for sign in newElementFromX
-			negY := testCalc.dataY.negate(testField.getTargetField().FieldOrder)
+			negY := testCalc.dataY.Negate(testField.getTargetField().FieldOrder)
 			if !negY.IsEqual(testElem.dataY) {
 				t.Errorf("Failed to derive Y from X: expected %s, got %s", expectedYStr, testCalc.dataY.String())
 			}

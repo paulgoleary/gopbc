@@ -9,7 +9,6 @@ type QuadraticField struct {
 
 // D2ExtensionQuadElement
 
-var _ Element = (*D2ExtensionQuadElement)(nil)
 var _ PointElement = (*D2ExtensionQuadElement)(nil)
 
 type D2ExtensionQuadElement struct {
@@ -26,19 +25,21 @@ func (elem *D2ExtensionQuadElement) Y() *BigInt {
 }
 
 // TODO !!!
-func (elem *D2ExtensionQuadElement) NegateP() PointElement {
-	return elem
+func (elem *D2ExtensionQuadElement) Negate() PointElement {
+	return nil
 }
 
-func (elem *D2ExtensionQuadElement) InvertP() PointElement {
-	return elem
+func (elem *D2ExtensionQuadElement) Invert() PointElement {
+	return nil
 }
 
+/*
 func (elem *D2ExtensionQuadElement) Copy() Element {
 	theCopy := elem.dup()
 	theCopy.freeze()
 	return theCopy
 }
+*/
 
 func (elem *D2ExtensionQuadElement) dup() *D2ExtensionQuadElement {
 	newElem := new(D2ExtensionQuadElement)
@@ -48,11 +49,7 @@ func (elem *D2ExtensionQuadElement) dup() *D2ExtensionQuadElement {
 	return newElem
 }
 
-func (elem *D2ExtensionQuadElement) SetToOne() Element {
-	return &D2ExtensionQuadElement{elem.ElemField, PointLike{BI_ONE, BI_ZERO}}
-}
-
-func (elem *D2ExtensionQuadElement) Square() Element {
+func (elem *D2ExtensionQuadElement) Square() PointElement {
 	/*
 	Element e0 = this.x.duplicate();
     Element e1 = this.x.duplicate();
@@ -69,7 +66,7 @@ func (elem *D2ExtensionQuadElement) Square() Element {
 	return elem.ElemField.MakeElement(e0, e1)
 }
 
-func (elem *D2ExtensionQuadElement) Mul(elemIn Element) Element {
+func (elem *D2ExtensionQuadElement) MulPoint(elemIn PointElement) PointElement {
 	/*
 	DegreeTwoExtensionQuadraticElement element = (DegreeTwoExtensionQuadraticElement)e;
 
@@ -89,10 +86,9 @@ func (elem *D2ExtensionQuadElement) Mul(elemIn Element) Element {
 	 */
 
 	targetOrder := elem.ElemField.targetField.FieldOrder // TODO - verify !
-	d2xqeIn := elemIn.(*D2ExtensionQuadElement) // curses!!! was hoping to avoid this :/
-	e2 := elem.dataX.Add(elem.dataY, targetOrder).Mul(d2xqeIn.dataX.Add(d2xqeIn.dataY, targetOrder), targetOrder)
-	e0 := elem.dataX.Mul(d2xqeIn.dataX, targetOrder)
-	e1 := elem.dataY.Mul(d2xqeIn.dataY, targetOrder)
+	e2 := elem.dataX.Add(elem.dataY, targetOrder).Mul(elemIn.X().Add(elemIn.Y(), targetOrder), targetOrder)
+	e0 := elem.dataX.Mul(elemIn.X(), targetOrder)
+	e1 := elem.dataY.Mul(elemIn.Y(), targetOrder)
 	e2 = e2.Sub(e0, targetOrder)
 	return elem.ElemField.MakeElement(e0.Sub(e1, targetOrder), e2.Sub(e1, targetOrder))
 }
@@ -124,4 +120,8 @@ func MakeD2ExtensionQuadField(Fq *ZrField) *D2ExtensionQuadField {
 	field.LengthInBytes = field.targetField.LengthInBytes * 2
 
 	return field
+}
+
+func (field *D2ExtensionQuadField) MakeOne() PointElement {
+	return &D2ExtensionQuadElement{field, PointLike{BI_ONE, BI_ZERO}}
 }

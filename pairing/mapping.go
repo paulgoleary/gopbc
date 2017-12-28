@@ -34,17 +34,15 @@ func MakeTypeATateNafProjMillerPairingMap(pairing *TypeAPairing) *TypeATateNafPr
 
 var _ Mapping = (*TypeATateNafProjMillerPairingMap)(nil)
 
-// TODO !!!
 func (pm *TypeATateNafProjMillerPairingMap) pairing(P field.PointElement, Q field.PointElement) field.Element {
 
-	// TODO: maybe an explicit make for one element so we don't need to pass in nil's ?
-	f := pm.Fq2.MakeElement(nil, nil).SetToOne()
+	f := pm.Fq2.MakeOne()
 	// u := pm.Fq2.MakeElement()
 
 	// JacobPoint V = new JacobPoint(P.getX(), P.getY(), P.getX().getField().newOneElement());
 	V := &JacobPoint{P.X(), P.Y(), field.BI_ONE}
 
-	nP := P.NegateP()
+	nP := P.Negate()
 	field.Trace(nP)
 
 	// Element a = this.pairing.Fp.newElement();
@@ -61,7 +59,7 @@ func (pm *TypeATateNafProjMillerPairingMap) pairing(P field.PointElement, Q fiel
 		field.Trace(V, a, b, c)
 		u := pm.millerStep(a, b, c, Q.X(), Q.Y())
 		field.Trace(u, a, b, c)
-		f = f.Square().Mul(u)
+		f = f.Square().MulPoint(u)
 		field.Trace(f, a, b, c)
 
 		switch rn := pm.rNAF[i]; rn {
@@ -74,7 +72,7 @@ func (pm *TypeATateNafProjMillerPairingMap) pairing(P field.PointElement, Q fiel
 			}
 			field.Trace(V, a, b, c)
 			u = pm.millerStep(a, b, c, Q.X(), Q.Y())
-			f = f.Mul(u)
+			f = f.MulPoint(u)
 			field.Trace(f)
 		case 0: // NOP
 		default:
@@ -223,7 +221,7 @@ func (pm *TypeATateNafProjMillerPairingMap) add(V *JacobPoint, P field.PointElem
 
 func (pm *TypeATateNafProjMillerPairingMap) tatePow(in field.PointElement, cofactor *big.Int) field.PointElement {
 
-	targetOrder := pm.Fq.FieldOrder
+	// targetOrder := pm.Fq.FieldOrder
 
 	// Element in1 = in.getY();
 	// in1.negate();
@@ -231,11 +229,11 @@ func (pm *TypeATateNafProjMillerPairingMap) tatePow(in field.PointElement, cofac
 	// TODO: not used? or expected to get picked up as a side-effect?
 
 	// Point temp = (Point)in.duplicate().invert();
-	tempPoint := in.InvertP()
+	tempPoint := in.Invert()
 
-	in = in.Mul(tempPoint)
+	in = in.MulPoint(tempPoint)
 
-	this.lucasOdd(out, in, temp, cofactor);
+	// this.lucasOdd(out, in, temp, cofactor);
 
 	return nil
 }

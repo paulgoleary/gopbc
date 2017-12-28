@@ -12,9 +12,9 @@ type TestElement struct {
 	mod  big.Int
 }
 
-// implement Element for TestElement
+// implement PowElement for TestElement
 
-func (elem *TestElement) Copy() Element {
+func (elem *TestElement) CopyPow() PowElement {
 	newElem := new(TestElement)
 	newElem.data = new(big.Int)
 	newElem.data.SetBytes(elem.data.Bytes()) // need to make 'deep copy' of mutable data
@@ -22,16 +22,16 @@ func (elem *TestElement) Copy() Element {
 	return newElem
 }
 
-func (elem *TestElement) Mul(mulElem Element) Element {
+func (elem *TestElement) MulPow(mulElem PowElement) PowElement {
 	in := mulElem.(*TestElement) // TODO: not a fan of this...
-	ret := elem.Copy().(*TestElement)
+	ret := elem.CopyPow().(*TestElement)
 	ret.data.Mul(elem.data, in.data)
 	ret.data.Mod(ret.data, &elem.mod)
 	return ret
 }
 
-func (elem *TestElement) SetToOne() Element {
-	ret := elem.Copy().(*TestElement)
+func (elem *TestElement) MakeOnePow() PowElement {
+	ret := elem.CopyPow().(*TestElement)
 	ret.data.Set(ONE)
 	return ret
 }
@@ -40,14 +40,8 @@ func (elem *TestElement) String() string {
 	return elem.data.String()
 }
 
-// stub impl - don't need it for testing
-func (elem *TestElement) Square() Element {
-	return nil
-}
-
-
 // validate that TestElement satisfies Element interface
-var _ Element = (*TestElement)(nil)
+var _ PowElement = (*TestElement)(nil)
 
 func checkPowWindowBigInt(t *testing.T, testBase *TestElement, testExp *big.Int) {
 	expectedBigInt := new(big.Int).Exp(testBase.data, testExp, &testBase.mod)
@@ -55,7 +49,7 @@ func checkPowWindowBigInt(t *testing.T, testBase *TestElement, testExp *big.Int)
 }
 
 func checkPowWindow(t *testing.T, testBase *TestElement, testExp, expectedVal *big.Int) {
-	var elem Element = testBase
+	var elem PowElement = testBase
 	testPow := powWindow(elem, testExp)
 	if testPow.(*TestElement).data.Cmp(expectedVal) != 0 {
 		t.Errorf("powWindow exponent result was wrong, got: %d, want: %d.", testPow.String(), expectedVal.String())
