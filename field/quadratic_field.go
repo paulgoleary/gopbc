@@ -26,7 +26,11 @@ func (elem *D2ExtensionQuadElement) Y() *BigInt {
 }
 
 // TODO !!!
-func (elem *D2ExtensionQuadElement) Negate() PointElement {
+func (elem *D2ExtensionQuadElement) NegateP() PointElement {
+	return elem
+}
+
+func (elem *D2ExtensionQuadElement) InvertP() PointElement {
 	return elem
 }
 

@@ -137,13 +137,17 @@ func (elem *CurveElement) getTargetOrder() *big.Int {
 	return elem.elemParams.getTargetField().FieldOrder
 }
 
-func (elem *CurveElement) Negate() PointElement {
+func (elem *CurveElement) NegateP() PointElement {
 	if elem.isInf() {
 		return &CurveElement{elem.elemParams, PointLike{nil, nil}}
 	}
 	elem.PointLike.freeze() // make sure we're frozen
-	yNeg := elem.dataY.negate(elem.getTargetOrder())
+	yNeg := elem.dataY.Negate(elem.getTargetOrder())
 	return &CurveElement{elem.elemParams, PointLike{elem.dataX, yNeg}}
+}
+
+func (elem *CurveElement) InvertP() PointElement {
+	return nil // TODO!
 }
 
 func (elem *CurveElement) Square() Element {

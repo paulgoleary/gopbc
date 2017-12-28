@@ -44,7 +44,7 @@ func (pm *TypeATateNafProjMillerPairingMap) pairing(P field.PointElement, Q fiel
 	// JacobPoint V = new JacobPoint(P.getX(), P.getY(), P.getX().getField().newOneElement());
 	V := &JacobPoint{P.X(), P.Y(), field.BI_ONE}
 
-	nP := P.Negate()
+	nP := P.NegateP()
 	field.Trace(nP)
 
 	// Element a = this.pairing.Fp.newElement();
@@ -219,9 +219,23 @@ func (pm *TypeATateNafProjMillerPairingMap) add(V *JacobPoint, P field.PointElem
     in.mul(temp);
     this.lucasOdd(out, in, temp, cofactor);
   }
-
  */
 
 func (pm *TypeATateNafProjMillerPairingMap) tatePow(in field.PointElement, cofactor *big.Int) field.PointElement {
+
+	targetOrder := pm.Fq.FieldOrder
+
+	// Element in1 = in.getY();
+	// in1.negate();
+	// inY := in.Y().Negate(targetOrder)
+	// TODO: not used? or expected to get picked up as a side-effect?
+
+	// Point temp = (Point)in.duplicate().invert();
+	tempPoint := in.InvertP()
+
+	in = in.Mul(tempPoint)
+
+	this.lucasOdd(out, in, temp, cofactor);
+
 	return nil
 }

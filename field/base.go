@@ -139,7 +139,7 @@ func (bi *BigInt) invert(mod *big.Int) *BigInt {
 	return bi
 }
 
-func (bi *BigInt) negate(modIn *big.Int) *BigInt {
+func (bi *BigInt) Negate(modIn *big.Int) *BigInt {
 	if bi.isZero() {
 		return BI_ONE.copyUnfrozen()
 	}
@@ -168,7 +168,8 @@ type PointElement interface {
 	Element
 	X() *BigInt
 	Y() *BigInt
-	Negate() PointElement // TODO: might need to promote to Element?
+	NegateP() PointElement
+	InvertP() PointElement
 }
 
 type MakeElementFunc func() Element
