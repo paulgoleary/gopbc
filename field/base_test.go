@@ -17,7 +17,7 @@ type TestElement struct {
 func (elem *TestElement) CopyPow() PowElement {
 	newElem := new(TestElement)
 	newElem.data = new(big.Int)
-	newElem.data.SetBytes(elem.data.Bytes()) // need to make 'deep copy' of mutable data
+	newElem.data.SetBytes(elem.data.Bytes()) // need to make 'deep Copy' of mutable data
 	newElem.mod = elem.mod
 	return newElem
 }

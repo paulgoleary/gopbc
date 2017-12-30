@@ -63,7 +63,7 @@ func (bi *BigInt) copyUnfrozen() *BigInt {
 	return CopyFrom(&bi.v, false)
 }
 
-func (bi *BigInt) copy() *BigInt {
+func (bi *BigInt) Copy() *BigInt {
 	if bi == nil {
 		return nil
 	}
@@ -125,13 +125,13 @@ func (bi *BigInt) Square(modIn *big.Int) *BigInt {
 func (bi *BigInt) sqrt(modIn *big.Int) *BigInt {
 	// Int.ModSqrt implements  Tonelli-Shanks and also a more optimal version when modIn = 3 mod 4
 	// UGH! need to work around this bug: https://github.com/golang/go/issues/22265
-	// for now always copy
+	// for now always Copy
 	calc := bi.copyUnfrozen()
 	calc.v.ModSqrt(&bi.v, modIn)
 	return calc
 }
 
-func (bi *BigInt) invert(mod *big.Int) *BigInt {
+func (bi *BigInt) Invert(mod *big.Int) *BigInt {
 	if bi.frozen {
 		bi = bi.copyUnfrozen()
 	}
@@ -173,7 +173,7 @@ type PointElement interface {
 	String() string
 	X() *BigInt
 	Y() *BigInt
-	Negate() PointElement
+	NegateY() PointElement
 	Invert() PointElement
 	MulPoint(PointElement) PointElement
 	Square() PointElement

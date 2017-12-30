@@ -7,7 +7,7 @@ import (
 )
 
 type Mapping interface  {
-	pairing(var1 field.PointElement, var2 field.PointElement) field.Element
+	pairing(var1 field.PointElement, var2 field.PointElement) *GTFiniteElement
 	// isProductPairingSupported() bool
 	// pairings(var1 []field.Element, var2 []field.Element ) field.Element
 	// finalPow(var1 field.Element)
@@ -34,90 +34,43 @@ func MakeTypeATateNafProjMillerPairingMap(pairing *TypeAPairing) *TypeATateNafPr
 
 var _ Mapping = (*TypeATateNafProjMillerPairingMap)(nil)
 
-func (pm *TypeATateNafProjMillerPairingMap) pairing(P field.PointElement, Q field.PointElement) field.Element {
+func (pm *TypeATateNafProjMillerPairingMap) pairing(P field.PointElement, Q field.PointElement) *GTFiniteElement {
 
 	f := pm.Fq2.MakeOne()
-	// u := pm.Fq2.MakeElement()
 
-	// JacobPoint V = new JacobPoint(P.getX(), P.getY(), P.getX().getField().newOneElement());
 	V := &JacobPoint{P.X(), P.Y(), field.BI_ONE}
 
-	nP := P.Negate()
-	field.Trace(nP)
+	nP := P.NegateY()
 
-	// Element a = this.pairing.Fp.newElement();
-	// Element b = this.pairing.Fp.newElement();
-	// Element c = this.pairing.Fp.newElement();
-	// a := pm.Fq.NewZero()
-	// b := pm.Fq.NewZero()
-	// c := pm.Fq.NewZero()
-
-	// TODO !
 	var a, b, c *field.BigInt
 	for i := len(pm.rNAF) - 2; i >= 0; i-- {
 		V, a, b, c = pm.twice(V)
-		field.Trace(V, a, b, c)
 		u := pm.millerStep(a, b, c, Q.X(), Q.Y())
-		field.Trace(u, a, b, c)
 		f = f.Square().MulPoint(u)
-		field.Trace(f, a, b, c)
 
 		switch rn := pm.rNAF[i]; rn {
 		case -1, 1:
-			field.Trace(V, a, b, c)
 			if rn == -1 {
 				V, a, b, c = pm.add(V, nP)
 			} else {
 				V, a, b, c = pm.add(V, P)
 			}
-			field.Trace(V, a, b, c)
 			u = pm.millerStep(a, b, c, Q.X(), Q.Y())
 			f = f.MulPoint(u)
-			field.Trace(f)
 		case 0: // NOP
 		default:
 			log.Panicf("this should not happen")
 		}
 	}
 
-	/*
-	for(int i = this.r.length - 2; i >= 0; --i) {
-	this.twice(V, a, b, c);
-	this.millerStep(u, a, b, c, Q.getX(), Q.getY());
-	f.square().mul(u);
-	switch(this.r[i]) {
-	case -1:
-	this.add(V, nP, a, b, c);
-	this.millerStep(u, a, b, c, Q.getX(), Q.getY());
-	f.mul(u);
-	break;
-	case 1:
-	this.add(V, P, a, b, c);
-	this.millerStep(u, a, b, c, Q.getX(), Q.getY());
-	f.mul(u);
-	}
-	}
-	*/
+	out := pm.tatePow(f, pm.phikOnr)
 
-	field.Trace(f)
-	/*
-	    Point out = (Point)this.pairing.Fq2.newElement();
-    this.tatePow(out, f, this.pairing.phikOnr);
-    return new GTFiniteElement(this, (GTFiniteField)this.pairing.getGT(), out);
-	 */
-
-	 pm.tatePow(f, pm.phikOnr)
-
-	return nil
+	return pm.GT.MakeElement(out, pm)
 }
 
 func (pm *TypeATateNafProjMillerPairingMap) twice(V *JacobPoint) (*JacobPoint, *field.BigInt, *field.BigInt, *field.BigInt) {
 
 	targetOrder := pm.Fq.FieldOrder
-
-	// Element x = V.getX();
-	// Element y = V.getY();
-	// Element z = V.getZ();
 
 	// TODO: validate frozen? why not just just freeze? can't hurt ...
 	t1 := V.y.Square(targetOrder)
@@ -136,17 +89,6 @@ func (pm *TypeATateNafProjMillerPairingMap) twice(V *JacobPoint) (*JacobPoint, *
 	a = a.Mul(b, targetOrder)
 	b = b.Mul(V.z, targetOrder)
 
-	// Element t1 = y.duplicate().square();
-	// Element t2 = x.duplicate().mul(t1).twice().twice();
-	// b.set(z).square();
-	// a.set(x).square().mul(3).add(b.duplicate().square());
-	// c.set(a).mul(x).sub(t1).sub(t1);
-	// z.mul(y).twice();
-	// V.setX(a.duplicate().square().sub(t2.duplicate().twice()));
-	// V.setY( a.duplicate().mul(t2.duplicate().sub(V.getX())) .sub(t1.duplicate().square().twice().twice().twice()) );
-	// a.mul(b);
-	// b.mul(z);
-
 	V.freeze()
 	a.Freeze()
 	b.Freeze()
@@ -154,7 +96,6 @@ func (pm *TypeATateNafProjMillerPairingMap) twice(V *JacobPoint) (*JacobPoint, *
 	return V, a, b, c
 }
 
-// we mutate `out` in place here
 func (pm *TypeATateNafProjMillerPairingMap) millerStep(a, b, c, Qx, Qy *field.BigInt) field.PointElement {
 	a.Freeze()
 	b.Freeze()
@@ -163,9 +104,6 @@ func (pm *TypeATateNafProjMillerPairingMap) millerStep(a, b, c, Qx, Qy *field.Bi
 	x := c.Add(a.Mul(Qx, targetOrder), targetOrder)
 	y := b.Mul(Qy, targetOrder)
 	return pm.Fq2.MakeElement(x, y)
-
-	// out.getX().set(c).add(a.duplicate().mul(Qx));
-	// out.getY().set(b).mul(Qy);
 }
 
 func (pm *TypeATateNafProjMillerPairingMap) add(V *JacobPoint, P field.PointElement) (*JacobPoint, *field.BigInt, *field.BigInt, *field.BigInt) {
@@ -209,31 +147,45 @@ func (pm *TypeATateNafProjMillerPairingMap) add(V *JacobPoint, P field.PointElem
     return V, a, b, c
 }
 
-/*
-  final void tatePow(Point out, Point in, BigInteger cofactor) {
-    Element in1 = in.getY();
-    Point temp = (Point)in.duplicate().invert();
-    in1.negate();
-    in.mul(temp);
-    this.lucasOdd(out, in, temp, cofactor);
-  }
- */
-
 func (pm *TypeATateNafProjMillerPairingMap) tatePow(in field.PointElement, cofactor *big.Int) field.PointElement {
 
-	// targetOrder := pm.Fq.FieldOrder
-
-	// Element in1 = in.getY();
-	// in1.negate();
-	// inY := in.Y().Negate(targetOrder)
-	// TODO: not used? or expected to get picked up as a side-effect?
-
-	// Point temp = (Point)in.duplicate().invert();
 	tempPoint := in.Invert()
+	in = in.NegateY().MulPoint(tempPoint)
+	return pm.lucasOdd(in, tempPoint, cofactor)
+}
 
-	in = in.MulPoint(tempPoint)
+func (pm *TypeATateNafProjMillerPairingMap) lucasOdd(in field.PointElement, temp field.PointElement, cofactor *big.Int) field.PointElement {
 
-	// this.lucasOdd(out, in, temp, cofactor);
+	targetOrder := pm.Fq.FieldOrder
 
-	return nil
+	t0 := field.BI_TWO
+	t1 := in.X().Mul(field.BI_TWO, targetOrder)
+
+	// TODO: frozen-ness?
+	// no need to Copy t0 since it is frozen - it will just be copied again
+	v0 := t0
+	v1 := t1.Copy()
+
+	for j := cofactor.BitLen() - 1; j != 0; j-- {
+		if cofactor.Bit(j) != 0 {
+			v0 = v0.Mul(v1, targetOrder).Sub(t1, targetOrder)
+			v1 = v1.Square(targetOrder).Sub(t0, targetOrder)
+		} else {
+			v1 = v1.Mul(v0, targetOrder).Sub(t1, targetOrder)
+			v0 = v0.Square(targetOrder).Sub(t0, targetOrder)
+		}
+	}
+
+	v1 = v1.Mul(v0, targetOrder).Sub(t1, targetOrder)
+	v0 = v0.Square(targetOrder).Sub(t0, targetOrder)
+
+	v0.Freeze() // sneaky mutation below...
+	v1 = v1.Mul(field.BI_TWO, targetOrder).Sub(v0.Mul(t1, targetOrder), targetOrder)
+	t1 = t1.Square(targetOrder).Sub(t0, targetOrder).Sub(t0, targetOrder)
+	v1 = v1.Mul(t1.Invert(targetOrder), targetOrder)
+
+	v0 = v0.Mul(field.BI_TWO.Invert(targetOrder), targetOrder) // TODO jPBC pre-computes the mod inverse of two and uses it for this calc
+	v1 = v1.Mul(in.Y(), targetOrder)
+
+	return pm.Fq2.MakeElement(v0, v1)
 }

@@ -137,7 +137,7 @@ func (elem *CurveElement) getTargetOrder() *big.Int {
 	return elem.elemParams.getTargetField().FieldOrder
 }
 
-func (elem *CurveElement) Negate() PointElement {
+func (elem *CurveElement) NegateY() PointElement {
 	if elem.isInf() {
 		return &CurveElement{elem.elemParams, PointLike{nil, nil}}
 	}
@@ -223,8 +223,8 @@ func (elem *CurveElement) CopyPow() PowElement {
 func (elem *CurveElement) dup() *CurveElement {
 	newElem := new(CurveElement)
 	newElem.elemParams = elem.elemParams
-	newElem.dataX = elem.dataX.copy()
-	newElem.dataY = elem.dataY.copy()
+	newElem.dataX = elem.dataX.Copy()
+	newElem.dataY = elem.dataY.Copy()
 	return newElem
 }
 
@@ -257,7 +257,7 @@ func (elem *CurveElement) twiceInternal() *CurveElement {
 	// lambda = (3x^2 + a) / 2y
 	targetOrder := elem.getTargetOrder()
 	lambdaNumer := elem.dataX.Square(targetOrder).Mul(BI_THREE, targetOrder).Add(elem.elemParams.a.Data, targetOrder)
-	lambdaDenom := elem.dataY.Add(elem.dataY, targetOrder).invert(targetOrder)
+	lambdaDenom := elem.dataY.Add(elem.dataY, targetOrder).Invert(targetOrder)
 	lambda := lambdaNumer.Mul(lambdaDenom, targetOrder)
 	lambda.Freeze()
 
@@ -302,7 +302,7 @@ func (elem *CurveElement) mul(elemIn *CurveElement) *CurveElement {
 	targetOrder := elem.getTargetOrder()
 	lambdaNumer := elemIn.dataY.Sub(elem.dataY, targetOrder)
 	lambdaDenom := elemIn.dataX.Sub(elem.dataX, targetOrder)
-	lambda := lambdaNumer.Mul(lambdaDenom.invert(targetOrder), targetOrder)
+	lambda := lambdaNumer.Mul(lambdaDenom.Invert(targetOrder), targetOrder)
 	lambda.Freeze()
 
 	// x3 = lambda^2 - x1 - x2

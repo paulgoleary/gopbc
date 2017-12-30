@@ -24,42 +24,39 @@ func (elem *D2ExtensionQuadElement) Y() *BigInt {
 	return elem.dataY
 }
 
-// TODO !!!
-func (elem *D2ExtensionQuadElement) Negate() PointElement {
-	return nil
+// TODO: logic is very similar to curve field ...?
+func (elem *D2ExtensionQuadElement) NegateY() PointElement {
+	if elem.dataY.IsEqual(BI_ZERO) {
+		return elem
+	}
+	elem.PointLike.freeze() // make sure we're frozen
+	yNeg := elem.dataY.Negate(elem.ElemField.targetField.FieldOrder)
+	return &D2ExtensionQuadElement{elem.ElemField, PointLike{elem.dataX, yNeg}}
 }
 
 func (elem *D2ExtensionQuadElement) Invert() PointElement {
-	return nil
-}
 
-/*
-func (elem *D2ExtensionQuadElement) Copy() Element {
-	theCopy := elem.dup()
-	theCopy.freeze()
-	return theCopy
+	targetOrder := elem.ElemField.targetField.FieldOrder
+	elem.freeze()
+
+	e0:= elem.dataX.Square(targetOrder).Add(elem.dataY.Square(targetOrder), targetOrder).Invert(targetOrder)
+
+	x := elem.dataX.Mul(e0, targetOrder)
+	// no need to freeze (and therefore Copy) e0 because it's not used again
+	y := elem.dataY.Mul(e0.Negate(targetOrder), targetOrder)
+
+	return elem.ElemField.MakeElement(x, y)
 }
-*/
 
 func (elem *D2ExtensionQuadElement) dup() *D2ExtensionQuadElement {
 	newElem := new(D2ExtensionQuadElement)
 	newElem.ElemField = elem.ElemField
-	newElem.dataX = elem.dataX.copy()
-	newElem.dataY = elem.dataY.copy()
+	newElem.dataX = elem.dataX.Copy()
+	newElem.dataY = elem.dataY.Copy()
 	return newElem
 }
 
 func (elem *D2ExtensionQuadElement) Square() PointElement {
-	/*
-	Element e0 = this.x.duplicate();
-    Element e1 = this.x.duplicate();
-    e0.add(this.y).mul(e1.sub(this.y));
-    e1.set(this.x).mul(this.y).twice();
-    this.x.set(e0);
-    this.y.set(e1);
-    return this;
-	 */
-
 	targetOrder := elem.ElemField.targetField.FieldOrder // TODO: verify
 	e0 := elem.dataX.Add(elem.dataY, targetOrder).Mul(elem.dataX.Sub(elem.dataY, targetOrder), targetOrder)
 	e1 := elem.dataX.Mul(elem.dataY, targetOrder).Mul(BI_TWO, targetOrder)
@@ -67,24 +64,6 @@ func (elem *D2ExtensionQuadElement) Square() PointElement {
 }
 
 func (elem *D2ExtensionQuadElement) MulPoint(elemIn PointElement) PointElement {
-	/*
-	DegreeTwoExtensionQuadraticElement element = (DegreeTwoExtensionQuadraticElement)e;
-
-	Element e0 = this.x.duplicate();
-	Element e1 = element.x.duplicate();
-    Element e2 = this.x.getField().newElement();
-
-    e2.set(e0.add(this.y)).mul(e1.add(element.y));
-    e0.set(this.x).mul(element.x);
-    e1.set(this.y).mul(element.y);
-    e2.sub(e0);
-
-    this.x.set(e0).sub(e1);
-    this.y.set(e2).sub(e1);
-
-    return this;
-	 */
-
 	targetOrder := elem.ElemField.targetField.FieldOrder // TODO - verify !
 	e2 := elem.dataX.Add(elem.dataY, targetOrder).Mul(elemIn.X().Add(elemIn.Y(), targetOrder), targetOrder)
 	e0 := elem.dataX.Mul(elemIn.X(), targetOrder)

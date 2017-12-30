@@ -54,26 +54,8 @@ func (pairing *TypeAPairing) initTypeAPairingMap(params *PairingParameters) {
 	if method != NAF_MILLER_PROJECTIVE_METHOD {
 		log.Panicf("Pairing method currently unsupported: %s", method)
 	}
-
 	pairing.mapping = MakeTypeATateNafProjMillerPairingMap(pairing)
-
 }
-
-/*
-   protected Field initFp(BigInteger order) {
-       return new ZrField(random, order);
-   }
-
-   protected Field<? extends Point> initEq() {
-       // Remember the curve is: y^2 = x^3 + ax
-       return new CurveField<Field>(random,
-                                    Fq.newOneElement(),   // a
-                                    Fq.newZeroElement(),  // b
-                                    r,                    // order
-                                    h,                    // cofactor  (r*h)=q+1=#E(F_q)
-                                    genNoCofac);
-   }
-*/
 
 func (pairing *TypeAPairing) makeEq() *field.CurveField {
 	return field.MakeCurveField(
@@ -103,7 +85,7 @@ func (pairing *TypeAPairing) initTypeAPairingFields(params *PairingParameters) {
 	// Init G1, G2, GT
 	pairing.G1 = pairing.makeEq()
 	pairing.G2 = pairing.G1
-	// GT = initGT();
+	pairing.GT = MakeGTFiniteField(pairing.r, pairing.mapping, pairing.Fq2)
 }
 
 func MakeTypeAPairing(params *PairingParameters) *TypeAPairing {
