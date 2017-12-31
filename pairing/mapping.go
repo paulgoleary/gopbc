@@ -38,7 +38,7 @@ func (pm *TypeATateNafProjMillerPairingMap) pairing(P field.PointElement, Q fiel
 
 	f := pm.Fq2.MakeOne()
 
-	V := &JacobPoint{P.X(), P.Y(), pm.Fq.NewOneElement().Data}
+	V := &JacobPoint{P.X(), P.Y(), pm.Fq.NewOneElement().ModInt}
 
 	nP := P.NegateY()
 
@@ -152,7 +152,7 @@ func (pm *TypeATateNafProjMillerPairingMap) tatePow(in field.PointElement, cofac
 
 func (pm *TypeATateNafProjMillerPairingMap) lucasOdd(in field.PointElement, temp field.PointElement, cofactor *big.Int) field.PointElement {
 
-	t0 := pm.Fq.NewElement(field.TWO).Data
+	t0 := pm.Fq.NewElement(field.TWO).ModInt
 	t1 := in.X().Mul(field.MI_TWO)
 
 	// TODO: frozen-ness?

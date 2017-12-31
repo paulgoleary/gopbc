@@ -72,7 +72,7 @@ func (params *CurveParams) calcYSquared(xIn *ModInt) *ModInt {
 		panic("xIn needs to be frozen")
 	}
 	validateModulo(params.getTargetField().FieldOrder, xIn.m)
-	return xIn.Square().Add(params.a.Data).Mul(xIn).Add(params.b.Data)
+	return xIn.Square().Add(params.a.ModInt).Mul(xIn).Add(params.b.ModInt)
 }
 
 // TODO: needs to account for sign
@@ -193,9 +193,8 @@ func (elem *CurveElement) MulScalar(n *big.Int) *CurveElement {
 	return result
 }
 
-func (elem *CurveElement) PowZn(elemIn Element) *CurveElement {
-	zrElem := elemIn.(*ZrElement)
-	result := powWindow(elem, zrElem.GetInt()).(*CurveElement)
+func (elem *CurveElement) PowZn(in *big.Int) *CurveElement {
+	result := powWindow(elem, in).(*CurveElement)
 	result.freeze()
 	return result
 }
@@ -270,7 +269,7 @@ func (elem *CurveElement) twiceInternal() *CurveElement {
 
 	// We have P1 = P2 so the tangent line T at P1 ha slope
 	// lambda = (3x^2 + a) / 2y
-	lambdaNumer := elem.dataX.Square().Mul(MI_THREE).Add(elem.elemParams.a.Data)
+	lambdaNumer := elem.dataX.Square().Mul(MI_THREE).Add(elem.elemParams.a.ModInt)
 	lambdaDenom := elem.dataY.Add(elem.dataY).Invert()
 	lambda := lambdaNumer.Mul(lambdaDenom)
 	lambda.Freeze()

@@ -42,6 +42,10 @@ func MakeModIntStr(x string, frozen bool, mod *big.Int) *ModInt {
 	return &ModInt{ret, frozen, mod}
 }
 
+func (bi *ModInt) GetValue() *big.Int {
+	return &bi.v
+}
+
 func (bi *ModInt) Freeze() {
 	bi.frozen = true
 	return
@@ -176,12 +180,6 @@ type PowElement interface {
 	MulPow(PowElement) PowElement
 }
 
-type Element interface {
-	String() string
-	Copy() Element
-	Mul(Element) Element
-}
-
 type PointElement interface {
 	String() string
 	X() *ModInt
@@ -192,7 +190,6 @@ type PointElement interface {
 	Square() PointElement
 }
 
-type MakeElementFunc func() Element
 type BaseField struct {
 	LengthInBytes int
 	FieldOrder *big.Int
