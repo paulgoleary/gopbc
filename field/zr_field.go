@@ -6,22 +6,18 @@ import (
 
 type ZrField struct {
 	BaseField
+	TwoInverse *ModInt
 }
 
 type ZrElement struct {
 	ElemField *ZrField
-	Data      *BigInt
+	Data      *ModInt
 }
 
 // ZrElement
 
 // validate that ZrElement satisfies Element
 var _ Element = (*ZrElement)(nil)
-
-// TODO
-func (elem ZrElement) PowZn(eZn ZrElement) ZrElement {
-	return elem
-}
 
 func (elem ZrElement) GetInt() *big.Int {
 	return &elem.Data.v
@@ -41,41 +37,28 @@ func (elem ZrElement) Mul(Element) Element {
 	return elem
 }
 
-// TODO
-func (elem ZrElement) Square() Element {
-	return elem
-}
-
 // ZrField
 
 func MakeZrField(fieldOrder *big.Int) *ZrField {
 	zrField := new(ZrField)
 	zrField.FieldOrder = fieldOrder
 	zrField.LengthInBytes = fieldOrder.BitLen() / 8 // TODO: generalize ???
+	zrField.TwoInverse = zrField.NewElement(TWO).Data.Invert()
+	zrField.TwoInverse.Freeze()
 	return zrField
 }
 
 func (field *ZrField) NewOneElement() *ZrElement {
-	elem := new(ZrElement)
-	elem.ElemField = field
-	elem.Data = BI_ONE
-	return elem
+	return field.NewElement(ONE)
 }
 
 func (field *ZrField) NewZeroElement() *ZrElement {
-	elem := new(ZrElement)
-	elem.ElemField = field
-	elem.Data = BI_ZERO
-	return elem
-}
-
-func (field *ZrField) NewZero() *BigInt {
-	return BI_ZERO // ok to use because it's frozen
+	return field.NewElement(ZERO)
 }
 
 func (field *ZrField) NewElement(elemValue *big.Int) *ZrElement {
 	elem := new(ZrElement)
 	elem.ElemField = field
-	elem.Data = CopyFrom(elemValue, true)
+	elem.Data = CopyFrom(elemValue, true, field.FieldOrder)
 	return elem
 }

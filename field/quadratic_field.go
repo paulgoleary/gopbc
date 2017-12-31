@@ -16,34 +16,33 @@ type D2ExtensionQuadElement struct {
 	PointLike
 }
 
-func (elem *D2ExtensionQuadElement) X() *BigInt {
+func (elem *D2ExtensionQuadElement) X() *ModInt {
 	return elem.dataX
 }
 
-func (elem *D2ExtensionQuadElement) Y() *BigInt {
+func (elem *D2ExtensionQuadElement) Y() *ModInt {
 	return elem.dataY
 }
 
 // TODO: logic is very similar to curve field ...?
 func (elem *D2ExtensionQuadElement) NegateY() PointElement {
-	if elem.dataY.IsEqual(BI_ZERO) {
+	if elem.dataY.IsValEqual(MI_ZERO) {
 		return elem
 	}
 	elem.PointLike.freeze() // make sure we're frozen
-	yNeg := elem.dataY.Negate(elem.ElemField.targetField.FieldOrder)
+	yNeg := elem.dataY.Negate()
 	return &D2ExtensionQuadElement{elem.ElemField, PointLike{elem.dataX, yNeg}}
 }
 
 func (elem *D2ExtensionQuadElement) Invert() PointElement {
 
-	targetOrder := elem.ElemField.targetField.FieldOrder
 	elem.freeze()
 
-	e0:= elem.dataX.Square(targetOrder).Add(elem.dataY.Square(targetOrder), targetOrder).Invert(targetOrder)
+	e0:= elem.dataX.Square().Add(elem.dataY.Square()).Invert()
 
-	x := elem.dataX.Mul(e0, targetOrder)
+	x := elem.dataX.Mul(e0)
 	// no need to freeze (and therefore Copy) e0 because it's not used again
-	y := elem.dataY.Mul(e0.Negate(targetOrder), targetOrder)
+	y := elem.dataY.Mul(e0.Negate())
 
 	return elem.ElemField.MakeElement(x, y)
 }
@@ -57,19 +56,17 @@ func (elem *D2ExtensionQuadElement) dup() *D2ExtensionQuadElement {
 }
 
 func (elem *D2ExtensionQuadElement) Square() PointElement {
-	targetOrder := elem.ElemField.targetField.FieldOrder // TODO: verify
-	e0 := elem.dataX.Add(elem.dataY, targetOrder).Mul(elem.dataX.Sub(elem.dataY, targetOrder), targetOrder)
-	e1 := elem.dataX.Mul(elem.dataY, targetOrder).Mul(BI_TWO, targetOrder)
+	e0 := elem.dataX.Add(elem.dataY).Mul(elem.dataX.Sub(elem.dataY))
+	e1 := elem.dataX.Mul(elem.dataY).Mul(MI_TWO)
 	return elem.ElemField.MakeElement(e0, e1)
 }
 
 func (elem *D2ExtensionQuadElement) MulPoint(elemIn PointElement) PointElement {
-	targetOrder := elem.ElemField.targetField.FieldOrder // TODO - verify !
-	e2 := elem.dataX.Add(elem.dataY, targetOrder).Mul(elemIn.X().Add(elemIn.Y(), targetOrder), targetOrder)
-	e0 := elem.dataX.Mul(elemIn.X(), targetOrder)
-	e1 := elem.dataY.Mul(elemIn.Y(), targetOrder)
-	e2 = e2.Sub(e0, targetOrder)
-	return elem.ElemField.MakeElement(e0.Sub(e1, targetOrder), e2.Sub(e1, targetOrder))
+	e2 := elem.dataX.Add(elem.dataY).Mul(elemIn.X().Add(elemIn.Y()))
+	e0 := elem.dataX.Mul(elemIn.X())
+	e1 := elem.dataY.Mul(elemIn.Y())
+	e2 = e2.Sub(e0)
+	return elem.ElemField.MakeElement(e0.Sub(e1), e2.Sub(e1))
 }
 
 // D2ExtensionQuadField
@@ -80,27 +77,28 @@ type D2ExtensionQuadField struct {
 	QuadraticField
 }
 
-func (field *D2ExtensionQuadField) MakeElement(x *BigInt, y *BigInt) PointElement {
+func (qfield *D2ExtensionQuadField) MakeElement(x *ModInt, y *ModInt) PointElement {
 	if x != nil {
 		x.Freeze()
 	}
 	if y != nil {
 		y.Freeze()
 	}
-	return &D2ExtensionQuadElement{field, PointLike {x, y}}
+	return &D2ExtensionQuadElement{qfield, PointLike {x, y}}
 }
 
 func MakeD2ExtensionQuadField(Fq *ZrField) *D2ExtensionQuadField {
 
-	field := new(D2ExtensionQuadField)
-	field.targetField = Fq
-	field.FieldOrder = new(big.Int)
-	field.FieldOrder.Mul(field.targetField.FieldOrder, field.targetField.FieldOrder)
-	field.LengthInBytes = field.targetField.LengthInBytes * 2
+	qfield := new(D2ExtensionQuadField)
+	qfield.targetField = Fq
+	qfield.FieldOrder = new(big.Int)
+	qfield.FieldOrder.Mul(qfield.targetField.FieldOrder, qfield.targetField.FieldOrder)
+	qfield.LengthInBytes = qfield.targetField.LengthInBytes * 2
 
-	return field
+	return qfield
 }
 
-func (field *D2ExtensionQuadField) MakeOne() PointElement {
-	return &D2ExtensionQuadElement{field, PointLike{BI_ONE, BI_ZERO}}
+func (qfield *D2ExtensionQuadField) MakeOne() PointElement {
+	return &D2ExtensionQuadElement{qfield,
+	PointLike{MakeModInt(1, true, qfield.targetField.FieldOrder), MakeModInt(0, true, qfield.targetField.FieldOrder)}}
 }

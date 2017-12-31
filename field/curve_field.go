@@ -2,6 +2,7 @@ package field
 
 import (
 	"math/big"
+	"log"
 )
 
 type CurveField struct {
@@ -47,11 +48,13 @@ func (field *CurveField) newElementFromBytes(elemBytes *[]byte) *CurveElement {
 	xBytes := (*elemBytes)[:field.getTargetField().LengthInBytes]
 	yBytes := (*elemBytes)[field.getTargetField().LengthInBytes:]
 
-	dataX := new(BigInt)
+	dataX := new(ModInt)
 	dataX.setBytes(xBytes)
+	dataX.m = field.getTargetField().FieldOrder
 
-	dataY := new(BigInt)
+	dataY := new(ModInt)
 	dataY.setBytes(yBytes)
+	dataY.m = field.getTargetField().FieldOrder
 
 	elem := &CurveElement{ &field.CurveParams, PointLike{dataX, dataY}}
 
@@ -64,20 +67,20 @@ func (field *CurveField) newElementFromBytes(elemBytes *[]byte) *CurveElement {
 }
 
 // general curve is y^2 = x^3 + ax + b
-func (params *CurveParams) calcYSquared(xIn *BigInt) *BigInt {
-	order := params.getTargetField().FieldOrder
+func (params *CurveParams) calcYSquared(xIn *ModInt) *ModInt {
 	if !xIn.frozen {
 		panic("xIn needs to be frozen")
 	}
-	return xIn.Square(order).Add(params.a.Data, order).Mul(xIn, order).Add(params.b.Data, order)
+	validateModulo(params.getTargetField().FieldOrder, xIn.m)
+	return xIn.Square().Add(params.a.Data).Mul(xIn).Add(params.b.Data)
 }
 
 // TODO: needs to account for sign
 func (field *CurveField) newElementFromX(x *big.Int) *CurveElement {
 
-	copyX := CopyFrom(x, true)
+	copyX := CopyFrom(x, true, field.getTargetField().FieldOrder)
 	calcY2 := field.calcYSquared(copyX)
-	dataY := calcY2.sqrt(field.getTargetField().FieldOrder)
+	dataY := calcY2.sqrt()
 
 	elem := CurveElement{&field.CurveParams, PointLike{copyX, dataY}}
 
@@ -86,7 +89,9 @@ func (field *CurveField) newElementFromX(x *big.Int) *CurveElement {
 }
 
 func (field *CurveField) newElementFromStrings(xStr string, yStr string) *CurveElement {
-	return &CurveElement{&field.CurveParams, PointLike{MakeBigIntStr(xStr, true), MakeBigIntStr(yStr, true)}}
+	targetOrder := field.getTargetField().FieldOrder
+	return &CurveElement{&field.CurveParams,
+	PointLike{MakeModIntStr(xStr, true, targetOrder), MakeModIntStr(yStr, true, targetOrder)}}
 }
 
 func getLengthInBytes( field *CurveField ) int {
@@ -142,7 +147,7 @@ func (elem *CurveElement) NegateY() PointElement {
 		return &CurveElement{elem.elemParams, PointLike{nil, nil}}
 	}
 	elem.PointLike.freeze() // make sure we're frozen
-	yNeg := elem.dataY.Negate(elem.getTargetOrder())
+	yNeg := elem.dataY.Negate()
 	return &CurveElement{elem.elemParams, PointLike{elem.dataX, yNeg}}
 }
 
@@ -195,23 +200,33 @@ func (elem *CurveElement) PowZn(elemIn Element) *CurveElement {
 	return result
 }
 
+func validateModulo( mod1 *big.Int, mod2 *big.Int) {
+	// TODO: this is intentionally pointer comparison because we expect the ModInt m's to point to the same object
+	// need to think about this tho ...
+	if mod1 == nil || mod1 != mod2 {
+		log.Panicf("Field components must have valid and equal modulo")
+	}
+}
+
 func (elem *CurveElement) isValid() bool {
 
 	if elem.isInf() {
 		return true
 	}
 
-	calcY2 := elem.elemParams.calcYSquared(elem.dataX)
-	calcY2Check := elem.dataY.Square(elem.getTargetOrder())
+	validateModulo(elem.dataX.m, elem.dataY.m)
 
-	return calcY2.IsEqual(calcY2Check)
+	calcY2 := elem.elemParams.calcYSquared(elem.dataX)
+	calcY2Check := elem.dataY.Square()
+
+	return calcY2.IsValEqual(calcY2Check)
 }
 
 func (elem *CurveElement) isEqual(cmpElem *CurveElement) bool {
-	if !elem.dataX.IsEqual(cmpElem.dataX) {
+	if !elem.dataX.IsValEqual(cmpElem.dataX) {
 		return false
 	}
-	return elem.dataY.IsEqual(cmpElem.dataY)
+	return elem.dataY.IsValEqual(cmpElem.dataY)
 }
 
 func (elem *CurveElement) CopyPow() PowElement {
@@ -255,17 +270,16 @@ func (elem *CurveElement) twiceInternal() *CurveElement {
 
 	// We have P1 = P2 so the tangent line T at P1 ha slope
 	// lambda = (3x^2 + a) / 2y
-	targetOrder := elem.getTargetOrder()
-	lambdaNumer := elem.dataX.Square(targetOrder).Mul(BI_THREE, targetOrder).Add(elem.elemParams.a.Data, targetOrder)
-	lambdaDenom := elem.dataY.Add(elem.dataY, targetOrder).Invert(targetOrder)
-	lambda := lambdaNumer.Mul(lambdaDenom, targetOrder)
+	lambdaNumer := elem.dataX.Square().Mul(MI_THREE).Add(elem.elemParams.a.Data)
+	lambdaDenom := elem.dataY.Add(elem.dataY).Invert()
+	lambda := lambdaNumer.Mul(lambdaDenom)
 	lambda.Freeze()
 
 	// x3 = lambda^2 - 2x
-	x3 := lambda.Square(targetOrder).Sub(elem.dataX.Add(elem.dataX, targetOrder), targetOrder)
+	x3 := lambda.Square().Sub(elem.dataX.Add(elem.dataX))
 
 	// y3 = (x - x3) lambda - y
-	y3 := elem.dataX.Sub(x3, targetOrder).Mul(lambda, targetOrder).Sub(elem.dataY, targetOrder)
+	y3 := elem.dataX.Sub(x3).Mul(lambda).Sub(elem.dataY)
 
 	x3.Freeze()
 	y3.Freeze()
@@ -286,9 +300,9 @@ func (elem *CurveElement) mul(elemIn *CurveElement) *CurveElement {
 		return elem
 	}
 
-	if elem.dataX.IsEqual(elemIn.dataX) {
-		if elem.dataY.IsEqual(elemIn.dataY) {
-			if elem.dataY.IsEqual(BI_ZERO) {
+	if elem.dataX.IsValEqual(elemIn.dataX) {
+		if elem.dataY.IsValEqual(elemIn.dataY) {
+			if elem.dataY.IsValEqual(MI_ZERO) {
 				return &CurveElement{elem.elemParams, PointLike{nil, nil}}
 			} else {
 				return elem.twiceInternal()
@@ -299,17 +313,16 @@ func (elem *CurveElement) mul(elemIn *CurveElement) *CurveElement {
 
 	// P1 != P2, so the slope of the line L through P1 and P2 is
 	// lambda = (y2-y1)/(x2-x1)
-	targetOrder := elem.getTargetOrder()
-	lambdaNumer := elemIn.dataY.Sub(elem.dataY, targetOrder)
-	lambdaDenom := elemIn.dataX.Sub(elem.dataX, targetOrder)
-	lambda := lambdaNumer.Mul(lambdaDenom.Invert(targetOrder), targetOrder)
+	lambdaNumer := elemIn.dataY.Sub(elem.dataY)
+	lambdaDenom := elemIn.dataX.Sub(elem.dataX)
+	lambda := lambdaNumer.Mul(lambdaDenom.Invert())
 	lambda.Freeze()
 
 	// x3 = lambda^2 - x1 - x2
-	x3 := lambda.Square(targetOrder).Sub(elem.dataX, targetOrder).Sub(elemIn.dataX, targetOrder)
+	x3 := lambda.Square().Sub(elem.dataX).Sub(elemIn.dataX)
 
 	// y3 = (x1-x3) lambda - y1
-	y3 := elem.dataX.Sub(x3, targetOrder).Mul(lambda, targetOrder).Sub(elem.dataY, targetOrder)
+	y3 := elem.dataX.Sub(x3).Mul(lambda).Sub(elem.dataY)
 
 	x3.Freeze()
 	y3.Freeze()

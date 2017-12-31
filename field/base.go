@@ -3,6 +3,7 @@ package field
 import (
 	"math/big"
 	"fmt"
+	"log"
 )
 
 var ZERO = big.NewInt(0)
@@ -10,150 +11,162 @@ var ONE = big.NewInt(1)
 var TWO = big.NewInt(2)
 var THREE = big.NewInt(3)
 
-var BI_ZERO = MakeBigInt(0, true)
-var BI_ONE = MakeBigInt(1, true)
-var BI_TWO = MakeBigInt(2, true)
-var BI_THREE = MakeBigInt(3, true)
-var BI_FOUR = MakeBigInt(4, true)
-var BI_EIGHT = MakeBigInt(8, true)
+// for validation purposes this special value is assumed to match any other modulus
+var MOD_ANY = big.NewInt(-1)
+
+var MI_ZERO = MakeModInt(0, true, MOD_ANY)
+var MI_ONE = MakeModInt(1, true, MOD_ANY)
+var MI_TWO = MakeModInt(2, true, MOD_ANY)
+var MI_THREE = MakeModInt(3, true, MOD_ANY)
+var MI_FOUR = MakeModInt(4, true, MOD_ANY)
+var MI_EIGHT = MakeModInt(8, true, MOD_ANY)
 
 /*
-	BigInt is intended to represent the base level of integer modular math for field computations.
+	ModInt is intended to represent the base level of integer modular math for field computations.
 	What may be a bit confusing (and I need to think about) is that I don't intend this to be a replacement for big.Int everywhere.
-	The full name here is more explicit: field.BigInt - that is, a large integer that is a component of a field, which implies/requires modular math.
+	The full name here is more explicit: field.ModInt - that is, a large integer that is a component of a field, which implies/requires modular math.
 */
-type BigInt struct {
+type ModInt struct {
 	v big.Int
 	frozen bool
+	m *big.Int
 }
 
-func MakeBigInt(x int64, frozen bool) *BigInt {
-	return &BigInt{ *big.NewInt(x), frozen}
+func MakeModInt(x int64, frozen bool, mod *big.Int) *ModInt {
+	return &ModInt{ *big.NewInt(x), frozen, mod}
 }
 
-func MakeBigIntStr(x string, frozen bool) *BigInt {
+func MakeModIntStr(x string, frozen bool, mod *big.Int) *ModInt {
 	ret := big.Int{}
 	ret.SetString(x, 10)
-	return &BigInt{ret, frozen}
+	return &ModInt{ret, frozen, mod}
 }
 
-func (bi *BigInt) Freeze() {
+func (bi *ModInt) Freeze() {
 	bi.frozen = true
 	return
 }
 
-func (bi *BigInt) isZero() bool {
+func (bi *ModInt) isZero() bool {
 	return bi.v.Cmp(ZERO) == 0
 }
 
-func CopyFrom(bi *big.Int, frozen bool) *BigInt {
+func CopyFrom(bi *big.Int, frozen bool, mod *big.Int) *ModInt {
 	if bi == nil {
 		return nil
 	}
-	newBigInt := new(BigInt)
-	newBigInt.v.SetBytes(bi.Bytes())
-	newBigInt.frozen = frozen
-	return newBigInt
+	newModInt := new(ModInt)
+	newModInt.v.SetBytes(bi.Bytes())
+	newModInt.frozen = frozen
+	newModInt.m = mod
+	return newModInt
 }
 
-func (bi *BigInt) copyUnfrozen() *BigInt {
+func (bi *ModInt) copyUnfrozen() *ModInt {
 	if bi == nil {
 		return nil
 	}
-	return CopyFrom(&bi.v, false)
+	return CopyFrom(&bi.v, false, bi.m)
 }
 
-func (bi *BigInt) Copy() *BigInt {
+func (bi *ModInt) Copy() *ModInt {
 	if bi == nil {
 		return nil
 	}
-	return CopyFrom(&bi.v, bi.frozen)
+	return CopyFrom(&bi.v, bi.frozen, bi.m)
 }
 
-func (bi *BigInt) setBytes(bytes []byte) {
+func (bi *ModInt) setBytes(bytes []byte) {
 	bi.v.SetBytes(bytes)
 }
 
 // TODO: how do we want these functions to behave WRT nil?
-func (bi *BigInt) IsEqual(in *BigInt) bool {
+// also TODO: should we validate for modulus? right now no ...
+func (bi *ModInt) IsValEqual(in *ModInt) bool {
 	if bi == nil || in == nil {
 		return false
 	}
 	return bi.v.Cmp(&in.v) == 0
 }
 
-func (bi *BigInt) Add(in *BigInt, modIn *big.Int) *BigInt {
+func (bi *ModInt) modInternal(in *ModInt) *ModInt {
+	if bi.frozen {
+		bi = bi.copyUnfrozen()
+	}
+
+	if (bi.m != in.m && in.m != MOD_ANY && bi.m.Cmp(in.m) != 0 ) {
+		log.Panicf("Cannot perform mod arithmetic with different modulo")
+	}
+
+	bi.v.Mod(&bi.v, bi.m)
+	return bi
+}
+
+func (bi *ModInt) Add(in *ModInt) *ModInt {
 	if bi.frozen {
 		bi = bi.copyUnfrozen()
 	}
 	bi.v.Add(&bi.v, &in.v)
-	return bi.mod(modIn)
+	return bi.modInternal(in)
 }
 
-func (bi *BigInt) Sub(in *BigInt, modIn *big.Int) *BigInt {
+func (bi *ModInt) Sub(in *ModInt) *ModInt {
 	if bi.frozen {
 		bi = bi.copyUnfrozen()
 	}
 	bi.v.Sub(&bi.v, &in.v)
-	return bi.mod(modIn)
+	return bi.modInternal(in)
 }
 
-func (bi *BigInt) mod(in *big.Int) *BigInt {
-	if bi.frozen {
-		bi = bi.copyUnfrozen()
-	}
-	bi.v.Mod(&bi.v, in)
-	return bi
-}
-
-func (bi *BigInt) Mul(in *BigInt, modIn *big.Int) *BigInt {
+func (bi *ModInt) Mul(in *ModInt) *ModInt {
 	if bi.frozen {
 		bi = bi.copyUnfrozen()
 	}
 	bi.v.Mul(&bi.v, &in.v)
-	return bi.mod(modIn)
+	return bi.modInternal(in)
 }
 
-func (bi *BigInt) Square(modIn *big.Int) *BigInt {
+func (bi *ModInt) Square() *ModInt {
 	if bi.frozen {
 		bi = bi.copyUnfrozen()
 	}
 	bi.v.Mul(&bi.v, &bi.v)
-	return bi.mod(modIn)
+	return bi.modInternal(bi)
 }
 
-func (bi *BigInt) sqrt(modIn *big.Int) *BigInt {
+func (bi *ModInt) sqrt() *ModInt {
 	// Int.ModSqrt implements  Tonelli-Shanks and also a more optimal version when modIn = 3 mod 4
 	// UGH! need to work around this bug: https://github.com/golang/go/issues/22265
 	// for now always Copy
 	calc := bi.copyUnfrozen()
-	calc.v.ModSqrt(&bi.v, modIn)
+	// TODO validate mod ? ie non-nil?
+	calc.v.ModSqrt(&bi.v, bi.m)
 	return calc
 }
 
-func (bi *BigInt) Invert(mod *big.Int) *BigInt {
+func (bi *ModInt) Invert() *ModInt {
 	if bi.frozen {
 		bi = bi.copyUnfrozen()
 	}
-	bi.v.ModInverse(&bi.v, mod)
+	bi.v.ModInverse(&bi.v, bi.m)
 	return bi
 }
 
-func (bi *BigInt) Negate(modIn *big.Int) *BigInt {
+func (bi *ModInt) Negate() *ModInt {
 	if bi.isZero() {
-		return BI_ONE.copyUnfrozen()
+		return MI_ONE.copyUnfrozen()
 	}
-	return CopyFrom(modIn, false).Sub(bi, modIn)
+	return CopyFrom(bi.m, false, bi.m).Sub(bi)
 }
 
-func (bi *BigInt) String() string {
+func (bi *ModInt) String() string {
 	return bi.v.String()
 }
 
 type Field interface {}
 
 type PointField interface {
-	MakeElement(x *BigInt, y *BigInt) PointElement
+	MakeElement(x *ModInt, y *ModInt) PointElement
 }
 
 type PowElement interface {
@@ -171,8 +184,8 @@ type Element interface {
 
 type PointElement interface {
 	String() string
-	X() *BigInt
-	Y() *BigInt
+	X() *ModInt
+	Y() *ModInt
 	NegateY() PointElement
 	Invert() PointElement
 	MulPoint(PointElement) PointElement
@@ -186,8 +199,8 @@ type BaseField struct {
 }
 
 type PointLike struct {
-	dataX *BigInt
-	dataY *BigInt
+	dataX *ModInt
+	dataY *ModInt
 }
 
 func (p *PointLike) String() string {
@@ -203,11 +216,11 @@ func (p *PointLike) frozen() bool {
 	return p.dataX.frozen && p.dataY.frozen
 }
 
-func (p *PointLike) X() *BigInt {
+func (p *PointLike) X() *ModInt {
 	return p.dataX
 }
 
-func (p *PointLike) Y() *BigInt {
+func (p *PointLike) Y() *ModInt {
 	return p.dataY
 }
 

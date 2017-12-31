@@ -92,11 +92,11 @@ func TestCurveBasics(t *testing.T) {
 		testElem := testField.newElementFromStrings(xStr, expectedYStr)
 		testCalc := testField.newElementFromX(&testElem.dataX.v)
 
-		if !testCalc.dataY.IsEqual(testElem.dataY) {
+		if !testCalc.dataY.IsValEqual(testElem.dataY) {
 			// need to test the negative as well
 			// TODO: need to account for sign in newElementFromX
-			negY := testCalc.dataY.Negate(testField.getTargetField().FieldOrder)
-			if !negY.IsEqual(testElem.dataY) {
+			negY := testCalc.dataY.Negate()
+			if !negY.IsValEqual(testElem.dataY) {
 				t.Errorf("Failed to derive Y from X: expected %s, got %s", expectedYStr, testCalc.dataY.String())
 			}
 		}
@@ -104,7 +104,7 @@ func TestCurveBasics(t *testing.T) {
 
 	// curve instance is y^2 = x^3 + x
 	// 1^3 + 1 = 2
-	testYFromX( "1", MakeBigInt(2, false).sqrt(testField.getTargetField().FieldOrder).String())
+	testYFromX( "1", MakeModInt(2, false, testField.getTargetField().FieldOrder).sqrt().String())
 
 	testYFromX(
 		"7852334875614213225969535005319230321249629225894318783946607976937179571030765324627135523985138174020408497250901949150717492683934959664497943409406486",

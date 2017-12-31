@@ -8,9 +8,9 @@ import (
 
 func testPoint(t *testing.T, thePoint field.PointElement, strExpectX string, strExpectY string) {
 
-	checkCoord := func(cmp *field.BigInt, expString string) {
-		expInt := field.MakeBigIntStr(expString, false)
-		if !expInt.IsEqual(cmp) {
+	checkCoord := func(cmp *field.ModInt, expString string) {
+		expInt := field.MakeModIntStr(expString, false, nil)
+		if !expInt.IsValEqual(cmp) {
 			t.Errorf("Wrong value for point coord comparision, got: %s, want: %s.", cmp.String(), expString)
 		}
 	}

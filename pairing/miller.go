@@ -6,9 +6,9 @@ import (
 )
 
 type JacobPoint struct {
-	x *field.BigInt
-	y *field.BigInt
-	z *field.BigInt
+	x *field.ModInt
+	y *field.ModInt
+	z *field.ModInt
 }
 
 func (jp *JacobPoint) String() string {
