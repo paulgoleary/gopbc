@@ -3,6 +3,7 @@ package field
 import (
 	"testing"
 	"math/big"
+	"strings"
 )
 
 func cmpInt8s( a, b []int8 ) bool {
@@ -29,6 +30,9 @@ func checkNAF(t *testing.T, testValStr string, resSlice []int8) {
 	res := NAF(testVal, 2)
 	if !cmpInt8s(res, resSlice) {
 		t.Errorf("Invalid / incompatible result for NAF: expected %v, got %v", resSlice, res)
+	}
+	if strings.Compare(testVal.String(), testValStr) != 0 {
+		t.Errorf("Input value should not be altered/stepped-on by NAF function")
 	}
 }
 func TestNAF(t *testing.T) {

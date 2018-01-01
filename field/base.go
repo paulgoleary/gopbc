@@ -188,6 +188,8 @@ type PointElement interface {
 	Invert() PointElement
 	MulPoint(PointElement) PointElement
 	Square() PointElement
+	Pow(*ModInt) PointElement
+	IsValEqual(PointElement) bool
 }
 
 type BaseField struct {
@@ -219,6 +221,10 @@ func (p *PointLike) X() *ModInt {
 
 func (p *PointLike) Y() *ModInt {
 	return p.dataY
+}
+
+func (p *PointLike) IsValEqual(elemIn PointElement) bool {
+	return p.dataX.IsValEqual(elemIn.X()) && p.dataY.IsValEqual(elemIn.Y())
 }
 
 func powWindow(base PowElement, exp *big.Int) PowElement {

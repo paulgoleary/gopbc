@@ -199,6 +199,10 @@ func (elem *CurveElement) PowZn(in *big.Int) *CurveElement {
 	return result
 }
 
+func (elem *CurveElement) Pow(in *ModInt) PointElement {
+	return elem.PowZn(&in.v)
+}
+
 func validateModulo( mod1 *big.Int, mod2 *big.Int) {
 	// TODO: this is intentionally pointer comparison because we expect the ModInt m's to point to the same object
 	// need to think about this tho ...

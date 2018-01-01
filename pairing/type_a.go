@@ -69,6 +69,9 @@ func (pairing *TypeAPairing) makeEq() *field.CurveField {
 func (pairing *TypeAPairing) initTypeAPairingFields(params *PairingParameters) {
 	// Init Zr
 	pairing.Zr = field.MakeZrField(pairing.r)
+	if pairing.Zr.FieldOrder != pairing.r && pairing.Zr.FieldOrder.Cmp(pairing.r) != 0 {
+		log.Panicf("Why is this happening?")
+	}
 
 	// Init Fq
 	pairing.Fq = field.MakeZrField(pairing.q)

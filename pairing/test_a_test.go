@@ -50,4 +50,15 @@ func TestMakeTypeAPairing(t *testing.T) {
 	testPoint(t, Z,
 		"8427709406215883227839951717300804898047197599691179303852509060811239041103323092291271103964136225006329684795508648068486825455284982044949366859105368",
 		"4452853254007027991300077621238640815837993300635305842991137231634336596445454707932906291400921695774864920057621535330198044334793069508782439758034655")
+
+	// e(g, g)^ab
+	testPairingPow := Z.Pow(elemTest1.Mul(elemTest2.ModInt))
+
+	// e(g^a, g^b)
+	testPowPairing := typeAPairing.mapping.pairing(powTest1, powTest2)
+
+	// e(g^a, g^b) == e(g, g)^ab - pairings FTW!
+	if !testPairingPow.IsValEqual(testPowPairing) {
+		t.Errorf("Expected bilinear pairings to be equivalent: %s, %s", testPowPairing.String(), testPairingPow.String())
+	}
 }

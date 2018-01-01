@@ -10,6 +10,7 @@ type QuadraticField struct {
 // D2ExtensionQuadElement
 
 var _ PointElement = (*D2ExtensionQuadElement)(nil)
+var _ PowElement = (*D2ExtensionQuadElement)(nil)
 
 type D2ExtensionQuadElement struct {
 	ElemField *D2ExtensionQuadField
@@ -69,6 +70,27 @@ func (elem *D2ExtensionQuadElement) MulPoint(elemIn PointElement) PointElement {
 	return elem.ElemField.MakeElement(e0.Sub(e1), e2.Sub(e1))
 }
 
+func (elem *D2ExtensionQuadElement) Pow(in *ModInt) PointElement {
+	result := powWindow(elem, &in.v).(*D2ExtensionQuadElement)
+	result.freeze()
+	return result
+}
+
+func (elem *D2ExtensionQuadElement) CopyPow() PowElement {
+	theCopy := elem.dup()
+	theCopy.freeze()
+	return theCopy
+}
+
+func (elem *D2ExtensionQuadElement) MakeOnePow() PowElement {
+	return elem.ElemField.makeOneInternal()
+}
+
+func (elem *D2ExtensionQuadElement) MulPow(elemIn PowElement) PowElement {
+	res := elem.MulPoint(elemIn.(*D2ExtensionQuadElement))
+	return res.(*D2ExtensionQuadElement)
+}
+
 // D2ExtensionQuadField
 
 var _ PointField = (*D2ExtensionQuadField)(nil)
@@ -98,7 +120,11 @@ func MakeD2ExtensionQuadField(Fq *ZrField) *D2ExtensionQuadField {
 	return qfield
 }
 
-func (qfield *D2ExtensionQuadField) MakeOne() PointElement {
+func (qfield *D2ExtensionQuadField) makeOneInternal() *D2ExtensionQuadElement {
 	return &D2ExtensionQuadElement{qfield,
-	PointLike{MakeModInt(1, true, qfield.targetField.FieldOrder), MakeModInt(0, true, qfield.targetField.FieldOrder)}}
+		PointLike{MakeModInt(1, true, qfield.targetField.FieldOrder), MakeModInt(0, true, qfield.targetField.FieldOrder)}}
+}
+
+func (qfield *D2ExtensionQuadField) MakeOne() PointElement {
+	return qfield.makeOneInternal()
 }
