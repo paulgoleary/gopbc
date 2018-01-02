@@ -3,6 +3,8 @@ package field
 import (
 	"math/big"
 	"fmt"
+	"crypto/rand"
+	"log"
 )
 
 func NAF(nIn *big.Int, k int) []int8 {
@@ -49,6 +51,10 @@ func Trace(strs ...fmt.Stringer) {
 	println()
 }
 
-func GetRandomInt(order *big.Int) *ModInt {
-
+func GetRandomInt(order *big.Int) *big.Int {
+	randInt, err := rand.Int(rand.Reader, order)
+	if err != nil {
+		log.Fatal(err)
+	}
+	return randInt
 }

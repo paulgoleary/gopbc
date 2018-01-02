@@ -2,6 +2,7 @@ package field
 
 import (
 	"math/big"
+	"fmt"
 )
 
 type ZrField struct {
@@ -12,6 +13,10 @@ type ZrField struct {
 type ZrElement struct {
 	ElemField *ZrField
 	*ModInt
+}
+
+func (elem *ZrElement) String() string {
+	return fmt.Sprintf("ZrElement: %s | %s", elem.v.String(), elem.ElemField.FieldOrder.String())
 }
 
 // ZrField

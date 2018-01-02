@@ -20,7 +20,7 @@ func testPoint(t *testing.T, thePoint field.PointElement, strExpectX string, str
 
 // func MakeTypeAPairing(params *PairingParameters) *TypeAPairing {
 func TestMakeTypeAPairing(t *testing.T) {
-	pairingParms := getCompatParams()
+	pairingParms := GetCompatParams()
 	typeAPairing := MakeTypeAPairing(pairingParms)
 
 	// test compatibility with PBC

@@ -1,6 +1,6 @@
 package pairing
 
-func getCompatParams() *PairingParameters {
+func GetCompatParams() *PairingParameters {
 
 	/*
 	   *** this is now actually *also* cribbed from the bdc project ...
