@@ -1,7 +1,7 @@
 package pairing
 
 import (
-	"gobdc/field"
+	"gopbc/field"
 	"fmt"
 )
 

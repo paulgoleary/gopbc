@@ -48,3 +48,7 @@ func Trace(strs ...fmt.Stringer) {
 	}
 	println()
 }
+
+func GetRandomInt(order *big.Int) *ModInt {
+
+}

@@ -2,7 +2,7 @@ package pairing
 
 import (
 	"math/big"
-	"gobdc/field"
+	"gopbc/field"
 )
 
 type GTFiniteField struct {

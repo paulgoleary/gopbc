@@ -15,7 +15,7 @@ OTHER
 
 . Trying to understand any trade-offs between pointers and interfaces
 . An interface instance is pointer-like but slightly larger
-.. based on this experiement:
+.. based on this experiment:
 
 	xx := TestElement{}
 	println(unsafe.Sizeof(xx)) // 40 bytes
