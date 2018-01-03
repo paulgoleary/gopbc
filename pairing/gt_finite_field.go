@@ -18,7 +18,7 @@ func MakeGTFiniteField(order *big.Int, inPairing Mapping, targetField *field.D2E
 
 	field.targetField = targetField
 	field.FieldOrder = order
-	field.LengthInBytes = field.targetField.LengthInBytes * 2
+	field.LengthInBytes = field.targetField.LengthInBytes
 	field.pairing = inPairing
 
 	return field
