@@ -4,7 +4,7 @@ import "math/big"
 
 type QuadraticField struct {
 	BaseField
-	targetField *ZrField
+	targetField *ZField
 }
 
 // D2ExtensionQuadElement
@@ -114,7 +114,7 @@ func (qfield *D2ExtensionQuadField) MakeElementFromBytes(elemBytes []byte) Point
 	return qfield.MakeElement(pnt.dataX, pnt.dataY)
 }
 
-func MakeD2ExtensionQuadField(Fq *ZrField) *D2ExtensionQuadField {
+func MakeD2ExtensionQuadField(Fq *ZField) *D2ExtensionQuadField {
 
 	qfield := new(D2ExtensionQuadField)
 	qfield.targetField = Fq

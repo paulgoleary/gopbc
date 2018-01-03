@@ -5,39 +5,45 @@ import (
 	"fmt"
 )
 
-type ZrField struct {
+type ZField struct {
 	BaseField
 	TwoInverse *ModInt
 }
 
-type ZrElement struct {
-	ElemField *ZrField
+type ZElement struct {
+	ElemField *ZField
 	*ModInt
 }
 
-func (elem *ZrElement) String() string {
-	return fmt.Sprintf("ZrElement: %s | %s", elem.v.String(), elem.ElemField.FieldOrder.String())
+func (elem *ZElement) String() string {
+	return fmt.Sprintf("ZElement: %s | %s", elem.v.String(), elem.ElemField.FieldOrder.String())
 }
 
-// ZrField
+// ZField
 
-func MakeZrField(fieldOrder *big.Int) *ZrField {
-	zrField := new(ZrField)
-	zrField.FieldOrder = fieldOrder
-	zrField.LengthInBytes = fieldOrder.BitLen() / 8 // TODO: generalize ???
-	zrField.TwoInverse = zrField.NewElement(TWO).Invert()
-	zrField.TwoInverse.Freeze()
-	return zrField
+func MakeZField(fieldOrder *big.Int) *ZField {
+	zField := new(ZField)
+	zField.FieldOrder = fieldOrder
+	zField.LengthInBytes = fieldOrder.BitLen() / 8 // TODO: generalize ???
+	zField.TwoInverse = zField.NewElement(TWO).Invert()
+	zField.TwoInverse.Freeze()
+	return zField
 }
 
-func (zrfield *ZrField) NewOneElement() *ZrElement {
-	return zrfield.NewElement(ONE)
+func (zfield *ZField) NewOneElement() *ZElement {
+	return zfield.NewElement(ONE)
 }
 
-func (zrfield *ZrField) NewZeroElement() *ZrElement {
-	return zrfield.NewElement(ZERO)
+func (zfield *ZField) NewZeroElement() *ZElement {
+	return zfield.NewElement(ZERO)
 }
 
-func (zrfield *ZrField) NewElement(elemValue *big.Int) *ZrElement {
-	return &ZrElement{zrfield,CopyFrom(elemValue, true, zrfield.FieldOrder)}
+func (zfield *ZField) NewElement(elemValue *big.Int) *ZElement {
+	return &ZElement{zfield,CopyFrom(elemValue, true, zfield.FieldOrder)}
 }
+
+func (zfield *ZField) NewRandomElement() *ZElement {
+	randInt := GetRandomInt(zfield.FieldOrder)
+	return &ZElement{zfield,CopyFrom(randInt, true, zfield.FieldOrder)}
+}
+

@@ -11,7 +11,7 @@ type GTFiniteField struct {
 	pairing Mapping
 }
 
-//   public GTFiniteField(SecureRandom random, BigInteger order, PairingMap pairing, F targetField) {
+//   public GTFiniteField(SecureRandom random, BigInteger order, PairingMap Pairing, F targetField) {
 func MakeGTFiniteField(order *big.Int, inPairing Mapping, targetField *field.D2ExtensionQuadField) *GTFiniteField {
 
 	field := new(GTFiniteField)
@@ -36,8 +36,8 @@ func (field *GTFiniteField) MakeElementFromBytes(elemBytes []byte, inPairing Map
 var _ field.PointElement = (*GTFiniteElement)(nil)
 
 /*
-. GTFiniteElement doesn't seem to do anything besides wrap an Element value and point back to it's pairing
-. The methods setToRandom() and setFromHash(...) set the value and then call the finalPow() method of the pairing
+. GTFiniteElement doesn't seem to do anything besides wrap an Element value and point back to it's Pairing
+. The methods setToRandom() and setFromHash(...) set the value and then call the finalPow() method of the Pairing
 .. not sure what that is all about ...?
  */
 

@@ -8,7 +8,7 @@ import (
 )
 
 type Mapping interface  {
-	pairing(var1 field.PointElement, var2 field.PointElement) *GTFiniteElement
+	Pairing(var1 field.PointElement, var2 field.PointElement) *GTFiniteElement
 	// isProductPairingSupported() bool
 	// pairings(var1 []field.Element, var2 []field.Element ) field.Element
 	// finalPow(var1 field.Element)
@@ -35,9 +35,9 @@ func MakeTypeATateNafProjMillerPairingMap(pairing *TypeAPairing) *TypeATateNafPr
 
 var _ Mapping = (*TypeATateNafProjMillerPairingMap)(nil)
 
-func (pm *TypeATateNafProjMillerPairingMap) pairing(P field.PointElement, Q field.PointElement) *GTFiniteElement {
+func (pm *TypeATateNafProjMillerPairingMap) Pairing(P field.PointElement, Q field.PointElement) *GTFiniteElement {
 
-	defer field.TimeTrack(time.Now(), "two-point pairing")
+	defer field.TimeTrack(time.Now(), "two-point Pairing")
 
 	f := pm.Fq2.MakeOne()
 

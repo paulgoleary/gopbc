@@ -14,8 +14,8 @@ type CurveField struct {
 
 type CurveParams struct {
 	BaseField
-	a          *ZrElement
-	b          *ZrElement
+	a          *ZElement
+	b          *ZElement
 }
 
 type CurveElement struct {
@@ -39,7 +39,7 @@ func (field *CurveField) GetGen() *CurveElement {
 	return field.gen
 }
 
-func (curveParams *CurveParams) getTargetField() *ZrField {
+func (curveParams *CurveParams) getTargetField() *ZField {
 	return curveParams.a.ElemField
 }
 
@@ -90,8 +90,8 @@ func getLengthInBytes( field *CurveField ) int {
 }
 
 func MakeCurveField(
-	a *ZrElement,
-	b *ZrElement,
+	a *ZElement,
+	b *ZElement,
 	order *big.Int,
 	cofactor *big.Int,
 	genNoCofacBytes []byte) *CurveField {
@@ -111,7 +111,7 @@ func MakeCurveField(
 // make minimal field for testing purposes - TODO: might need a generator?
 func makeTestCurveField(a *big.Int, b *big.Int, r *big.Int, q *big.Int) *CurveField {
 
-	zfield := MakeZrField(q)
+	zfield := MakeZField(q)
 
 	cfield := new(CurveField)
 	cfield.a = zfield.NewElement(a)

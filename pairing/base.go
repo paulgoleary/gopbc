@@ -20,9 +20,9 @@ type PreProcessing interface {}
 // TODO!
 type BasePairing struct {
 	// protected SecureRandom random;
-	G1, G2	*field.CurveField
-	GT 		*GTFiniteField
-	Zr		*field.ZrField
+	G1, G2     *field.CurveField
+	GT         *GTFiniteField
+	Zq         *field.ZField
 	TheMapping Mapping
 }
 

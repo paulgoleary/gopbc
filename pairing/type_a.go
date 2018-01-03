@@ -21,7 +21,7 @@ type TypeAPairingParams struct {
 type TypeAPairing struct {
 	TypeAPairingParams
 	BasePairing
-	Fq *field.ZrField
+	Fq *field.ZField
 	Fq2 *field.D2ExtensionQuadField
 	phikOnr *big.Int
 }
@@ -29,7 +29,7 @@ type TypeAPairing struct {
 func (pairing *TypeAPairing) initTypeAPairingParams(params *PairingParameters) {
 	pairingType := (*params)["type"]
 	if pairingType != aType {
-		panic(fmt.Sprintf("Invalid pairing type '%s' - expected 'a'", pairingType))
+		panic(fmt.Sprintf("Invalid Pairing type '%s' - expected 'a'", pairingType))
 	}
 
 	pairing.exp2 = params.getInt("exp2")
@@ -67,18 +67,18 @@ func (pairing *TypeAPairing) makeEq() *field.CurveField {
 }
 
 func (pairing *TypeAPairing) initTypeAPairingFields(params *PairingParameters) {
-	// Init Zr
-	pairing.Zr = field.MakeZrField(pairing.r)
-	if pairing.Zr.FieldOrder != pairing.r && pairing.Zr.FieldOrder.Cmp(pairing.r) != 0 {
+	// Init Zq
+	pairing.Zq = field.MakeZField(pairing.r)
+	if pairing.Zq.FieldOrder != pairing.r && pairing.Zq.FieldOrder.Cmp(pairing.r) != 0 {
 		log.Panicf("Why is this happening?")
 	}
 
 	// Init Fq
-	pairing.Fq = field.MakeZrField(pairing.q)
+	pairing.Fq = field.MakeZField(pairing.q)
 
 	// TODO: any reason to have Eq ?
 	// Init Eq
-	// pairing.Eq = initEq();
+	// Pairing.Eq = initEq();
 
 	pairing.Fq2 = field.MakeD2ExtensionQuadField(pairing.Fq)
 
