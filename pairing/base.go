@@ -23,7 +23,7 @@ type BasePairing struct {
 	G1, G2	*field.CurveField
 	GT 		*GTFiniteField
 	Zr		*field.ZrField
-	mapping Mapping
+	TheMapping Mapping
 }
 
 func (params PairingParameters) getInt(paramName string) int {
@@ -42,7 +42,7 @@ func (params PairingParameters) getBigInt(paramName string) *big.Int {
 	return ret
 }
 
-func (params PairingParameters) getBytes(paramName string, defaultVal *[]byte) *[]byte {
+func (params PairingParameters) getBytes(paramName string, defaultVal []byte) []byte {
 	paramVal := params[paramName]
 	if paramVal == "" {
 		return defaultVal
@@ -51,7 +51,7 @@ func (params PairingParameters) getBytes(paramName string, defaultVal *[]byte) *
 	if err != nil {
 		panic(fmt.Sprintf("Could not base64 decode param name '%s', value: %s", paramName, paramVal))
 	}
-	return &decoded
+	return decoded
 }
 
 func (params PairingParameters) getString(paramName string, defaultVal string) string {

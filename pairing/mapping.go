@@ -4,6 +4,7 @@ import (
 	"gopbc/field"
 	"log"
 	"math/big"
+	"time"
 )
 
 type Mapping interface  {
@@ -35,6 +36,8 @@ func MakeTypeATateNafProjMillerPairingMap(pairing *TypeAPairing) *TypeATateNafPr
 var _ Mapping = (*TypeATateNafProjMillerPairingMap)(nil)
 
 func (pm *TypeATateNafProjMillerPairingMap) pairing(P field.PointElement, Q field.PointElement) *GTFiniteElement {
+
+	defer field.TimeTrack(time.Now(), "two-point pairing")
 
 	f := pm.Fq2.MakeOne()
 

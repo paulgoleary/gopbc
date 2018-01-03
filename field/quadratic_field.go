@@ -109,6 +109,11 @@ func (qfield *D2ExtensionQuadField) MakeElement(x *ModInt, y *ModInt) PointEleme
 	return &D2ExtensionQuadElement{qfield, PointLike {x, y}}
 }
 
+func (qfield *D2ExtensionQuadField) MakeElementFromBytes(elemBytes []byte) PointElement {
+	pnt := MakePointFromBytes(elemBytes, &qfield.targetField.BaseField)
+	return qfield.MakeElement(pnt.dataX, pnt.dataY)
+}
+
 func MakeD2ExtensionQuadField(Fq *ZrField) *D2ExtensionQuadField {
 
 	qfield := new(D2ExtensionQuadField)

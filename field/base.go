@@ -202,8 +202,9 @@ type PointLike struct {
 	dataY *ModInt
 }
 
+// TODO: get at base type name ?
 func (p *PointLike) String() string {
-	return fmt.Sprintf("[%s,\n%s]", p.dataX.String(), p.dataY.String())
+	return fmt.Sprintf("PointLike: [%s,\n%s]", p.dataX.String(), p.dataY.String())
 }
 
 func (p *PointLike) freeze() {
@@ -225,6 +226,26 @@ func (p *PointLike) Y() *ModInt {
 
 func (p *PointLike) IsValEqual(elemIn PointElement) bool {
 	return p.dataX.IsValEqual(elemIn.X()) && p.dataY.IsValEqual(elemIn.Y())
+}
+
+func MakePointFromBytes(pointBytes []byte, targetField *BaseField) *PointLike {
+
+	if len(pointBytes) != targetField.LengthInBytes * 2 {
+		log.Panicf("Point byte data must have length of 2X target field: got %v, expect %v", len(pointBytes), targetField.LengthInBytes * 2)
+	}
+
+	xBytes := pointBytes[:targetField.LengthInBytes]
+	yBytes := pointBytes[targetField.LengthInBytes:]
+
+	dataX := new(ModInt)
+	dataX.setBytes(xBytes)
+	dataX.m = targetField.FieldOrder
+
+	dataY := new(ModInt)
+	dataY.setBytes(yBytes)
+	dataY.m = targetField.FieldOrder
+
+	return &PointLike{dataX, dataY}
 }
 
 func powWindow(base PowElement, exp *big.Int) PowElement {

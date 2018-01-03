@@ -28,6 +28,11 @@ func (field *GTFiniteField) MakeElement(inValue field.PointElement, inPairing Ma
 	return &GTFiniteElement{field, inValue, inPairing}
 }
 
+func (field *GTFiniteField) MakeElementFromBytes(elemBytes []byte, inPairing Mapping) *GTFiniteElement {
+	elem := field.targetField.MakeElementFromBytes(elemBytes)
+	return &GTFiniteElement{field, elem, inPairing}
+}
+
 var _ field.PointElement = (*GTFiniteElement)(nil)
 
 /*

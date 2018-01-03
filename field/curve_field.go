@@ -26,7 +26,7 @@ type CurveElement struct {
 // CurveField
 
 // TODO: JPBC (PBC?) handles case w/o bytes and cofactor
-func (field *CurveField) initGenFromBytes(genNoCofacBytes *[]byte) {
+func (field *CurveField) initGenFromBytes(genNoCofacBytes []byte) {
 	newGenNoCoFac := field.newElementFromBytes(genNoCofacBytes)
 	field.genNoCofac = newGenNoCoFac
 	field.gen = field.genNoCofac.MulScalar(field.cofactor)
@@ -43,20 +43,11 @@ func (curveParams *CurveParams) getTargetField() *ZrField {
 	return curveParams.a.ElemField
 }
 
-func (field *CurveField) newElementFromBytes(elemBytes *[]byte) *CurveElement {
+func (field *CurveField) newElementFromBytes(elemBytes []byte) *CurveElement {
 
-	xBytes := (*elemBytes)[:field.getTargetField().LengthInBytes]
-	yBytes := (*elemBytes)[field.getTargetField().LengthInBytes:]
+	pnt := MakePointFromBytes(elemBytes, &field.getTargetField().BaseField)
 
-	dataX := new(ModInt)
-	dataX.setBytes(xBytes)
-	dataX.m = field.getTargetField().FieldOrder
-
-	dataY := new(ModInt)
-	dataY.setBytes(yBytes)
-	dataY.m = field.getTargetField().FieldOrder
-
-	elem := &CurveElement{ &field.CurveParams, PointLike{dataX, dataY}}
+	elem := &CurveElement{ &field.CurveParams, *pnt}
 
 	// needs to be frozen before validation
 	elem.freeze()
@@ -103,7 +94,7 @@ func MakeCurveField(
 	b *ZrElement,
 	order *big.Int,
 	cofactor *big.Int,
-	genNoCofacBytes *[]byte) *CurveField {
+	genNoCofacBytes []byte) *CurveField {
 
 	field := new(CurveField)
 	field.a = a

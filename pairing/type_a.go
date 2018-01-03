@@ -15,7 +15,7 @@ type TypeAPairingParams struct {
 	r               *big.Int // r = 2^exp2 + sign1 * 2^exp1 + sign0 * 1
 	q               *big.Int // we work in E(F_q) (and E(F_q^2))
 	h               *big.Int // r * h = q + 1
-	genNoCofacBytes *[]byte
+	genNoCofacBytes []byte
 }
 
 type TypeAPairing struct {
@@ -54,7 +54,7 @@ func (pairing *TypeAPairing) initTypeAPairingMap(params *PairingParameters) {
 	if method != NAF_MILLER_PROJECTIVE_METHOD {
 		log.Panicf("Pairing method currently unsupported: %s", method)
 	}
-	pairing.mapping = MakeTypeATateNafProjMillerPairingMap(pairing)
+	pairing.TheMapping = MakeTypeATateNafProjMillerPairingMap(pairing)
 }
 
 func (pairing *TypeAPairing) makeEq() *field.CurveField {
@@ -88,7 +88,7 @@ func (pairing *TypeAPairing) initTypeAPairingFields(params *PairingParameters) {
 	// Init G1, G2, GT
 	pairing.G1 = pairing.makeEq()
 	pairing.G2 = pairing.G1
-	pairing.GT = MakeGTFiniteField(pairing.r, pairing.mapping, pairing.Fq2)
+	pairing.GT = MakeGTFiniteField(pairing.r, pairing.TheMapping, pairing.Fq2)
 }
 
 func MakeTypeAPairing(params *PairingParameters) *TypeAPairing {

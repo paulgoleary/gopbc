@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"crypto/rand"
 	"log"
+	"time"
 )
 
 func NAF(nIn *big.Int, k int) []int8 {
@@ -57,4 +58,9 @@ func GetRandomInt(order *big.Int) *big.Int {
 		log.Fatal(err)
 	}
 	return randInt
+}
+
+func TimeTrack(start time.Time, name string) {
+	elapsed := time.Since(start)
+	log.Printf("%s took %s", name, elapsed)
 }
