@@ -44,3 +44,18 @@ func (params *ProxyReEncryption) SecondLevelEncryption(data field.PointElement, 
 	c2 := data.MulPoint(params.Z.Pow(k.ModInt))
 	return c1, c2
 }
+
+func (params *ProxyReEncryption) ReEncryption(reEncryptKey1To2 field.PointElement, c1 field.PointElement, c2 field.PointElement) (field.PointElement, field.PointElement) {
+	// c1 = ( e(c1, rk) = e(pk_a^k, (pk_b ^(1/sk_a) = g^(b/a)))
+	c1 = params.TheMapping.Pairing(c1, reEncryptKey1To2)
+	return c1, c2
+}
+
+func (params *ProxyReEncryption) FirstLevelDecryption(targetSecretKey *field.ZElement, c1 field.PointElement, c2 field.PointElement ) field.PointElement {
+	// c1 = ( e(c1, rk) = e(pk_a^k, g^(b/a)) = e(g^ak, g^(b/a)) = e(g,g)^ak(b/a) = Z^bk
+	// c2 = m·Z^k
+	// c1x = Z^bk ^ 1/b = Z^k
+	c1x := c1.Pow(targetSecretKey.Invert())
+	// m·Z^k * (1/Z^k) = m
+	return c2.MulPoint(c1x.Invert())
+}
