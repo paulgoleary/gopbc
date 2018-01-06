@@ -22,7 +22,7 @@ func TestCurveSpec(t *testing.T) {
 
 	testField := makeTestCurve()
 
-	testElem1 := testField.newElementFromX(ONE)
+	testElem1 := testField.MakeElementFromX(ONE)
 	if !testElem1.frozen() {
 		t.Errorf("CurveElements should be frozen by default")
 	}
@@ -57,7 +57,7 @@ func TestCurveSpec(t *testing.T) {
 		t.Errorf("Invalid curve element mul (pow) result: expected %s, got %s", checkMulScalar.String(), testMulScalar.String())
 	}
 
-	testElem2 := testField.newElementFromX(TWO)
+	testElem2 := testField.MakeElementFromX(TWO)
 	testMul2 := testElem2.MulPow(testElem2) // multiply by self - internally hits twiceInternal()
 	if testElem2.isEqual(testMul2.(*CurveElement)) {
 		t.Errorf("Failed invariance check - testElem2 should not change")
@@ -70,7 +70,7 @@ func TestCurveSpec(t *testing.T) {
 		t.Errorf("Failed multiplication check: expected %s, got %s", checkMul2.String(), testMul2.String())
 	}
 
-	testElem3 := testField.newElementFromX(THREE)
+	testElem3 := testField.MakeElementFromX(THREE)
 	testMul3 := testElem3.MulPow(testElem2) // general multiplication
 	if testElem3.isEqual(testMul3.(*CurveElement)) {
 		t.Errorf("Failed invariance check - testElem3 should not change")
@@ -90,7 +90,7 @@ func TestCurveBasics(t *testing.T) {
 
 	testYFromX := func( xStr string, expectedYStr string ) {
 		testElem := testField.newElementFromStrings(xStr, expectedYStr)
-		testCalc := testField.newElementFromX(&testElem.dataX.v)
+		testCalc := testField.MakeElementFromX(&testElem.dataX.v)
 
 		if !testCalc.dataY.IsValEqual(testElem.dataY) {
 			// need to test the negative as well

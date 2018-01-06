@@ -11,6 +11,14 @@ type ProxyReEncryption struct {
 	Z field.PointElement
 }
 
+func MakeAFGHProxyReEncryption(thePairing *pairing.BasePairing) *ProxyReEncryption {
+	// TODO: obv move someplace else ... :/
+	afgh := new(ProxyReEncryption)
+	afgh.BasePairing = *thePairing
+	afgh.Z = afgh.TheMapping.Pairing(afgh.G1.GetGen(), afgh.G1.GetGen())
+	return afgh
+}
+
 func (params *ProxyReEncryption) GenerateSecretKey() *field.ZElement {
 	return params.Zq.NewRandomElement()
 }

@@ -10,10 +10,7 @@ func TestProxyReEncryptionBasics(t *testing.T) {
 	pairingParms := pairing.GetCompatParams()
 	typeAPairing := pairing.MakeTypeAPairing(pairingParms)
 
-	// TODO: obv move someplace else ... :/
-	afgh := new(ProxyReEncryption)
-	afgh.BasePairing = typeAPairing.BasePairing
-	afgh.Z = afgh.TheMapping.Pairing(afgh.G1.GetGen(), afgh.G1.GetGen())
+	afgh := MakeAFGHProxyReEncryption(&typeAPairing.BasePairing)
 
 	// get some rando secret keys
 	secretKey1 := afgh.GenerateSecretKey()

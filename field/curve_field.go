@@ -27,7 +27,7 @@ type CurveElement struct {
 
 // TODO: JPBC (PBC?) handles case w/o bytes and cofactor
 func (field *CurveField) initGenFromBytes(genNoCofacBytes []byte) {
-	newGenNoCoFac := field.newElementFromBytes(genNoCofacBytes)
+	newGenNoCoFac := field.MakeElementFromBytes(genNoCofacBytes)
 	field.genNoCofac = newGenNoCoFac
 	field.gen = field.genNoCofac.MulScalar(field.cofactor)
 	if !field.gen.isValid(){
@@ -43,7 +43,7 @@ func (curveParams *CurveParams) getTargetField() *ZField {
 	return curveParams.a.ElemField
 }
 
-func (field *CurveField) newElementFromBytes(elemBytes []byte) *CurveElement {
+func (field *CurveField) MakeElementFromBytes(elemBytes []byte) *CurveElement {
 
 	pnt := MakePointFromBytes(elemBytes, &field.getTargetField().BaseField)
 
@@ -66,15 +66,54 @@ func (params *CurveParams) calcYSquared(xIn *ModInt) *ModInt {
 	return xIn.Square().Add(params.a.ModInt).Mul(xIn).Add(params.b.ModInt)
 }
 
+// this function constructs a point on the curve from the input hash-derived bytes.
+// since the input is assumed to be random when we use it as an initial X value it is not guaranteed to lie on the curve
+// therefore - unlike MakeElementFromX - we iterate in a stable way to find a value that does satisfy the curve equation
+// the size of the hash must be such that we can guarantee that its value as an integer is less than our target order
+func (field *CurveField) MakeElementFromHash(h []byte) *CurveElement {
+	maxSafeBytes := field.getTargetField().LengthInBytes - 1
+	if len(h) > maxSafeBytes {
+		log.Panicf("Cannot construct point from hash when byte length exceeds field capacity: max bytes %v, got %v", maxSafeBytes, len(h) )
+	}
+	calcX := copyFromBytes(h, true, field.getTargetField().FieldOrder)
+
+	calcY2 := MI_ONE
+	gotIt := false
+	for !gotIt {
+		calcY2 = field.calcYSquared(calcX)
+		if calcY2.isSquare() {
+			gotIt = true
+		} else {
+			calcX = calcX.Square().Add(MI_ONE)
+			calcX.Freeze()
+		}
+	}
+
+	calcY := calcY2.sqrt()
+	if calcY.v.Sign() < 0 {
+		calcY = calcY.Negate()
+	}
+
+	elem := &CurveElement{&field.CurveParams, PointLike{calcX, calcY2.sqrt()}}
+	elem.freeze()
+	if field.cofactor != nil {
+		elem = elem.MulScalar(field.cofactor)
+	}
+
+	return elem
+}
+
 // TODO: needs to account for sign
-func (field *CurveField) newElementFromX(x *big.Int) *CurveElement {
+func (field *CurveField) MakeElementFromX(x *big.Int) *CurveElement {
 
 	copyX := CopyFrom(x, true, field.getTargetField().FieldOrder)
 	calcY2 := field.calcYSquared(copyX)
+	if !calcY2.isSquare() {
+		log.Panicf("Expected to calculate square: value %s", calcY2.String())
+	}
 	dataY := calcY2.sqrt()
 
 	elem := CurveElement{&field.CurveParams, PointLike{copyX, dataY}}
-
 	elem.freeze()
 	return &elem
 }
@@ -176,8 +215,6 @@ func (elem *CurveElement) frozen() bool {
 	return elem.PointLike.frozen()
 }
 
-// TODO: for reasons I DO NOT understand, multiplication by a scalar on a curve is pow ...?
-// ALSO TODO: not sure if MulScalar ends up part of Element ...?
 func (elem *CurveElement) MulScalar(n *big.Int) *CurveElement {
 	result := powWindow(elem, n).(*CurveElement)
 	result.freeze()

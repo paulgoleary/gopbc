@@ -55,15 +55,19 @@ func (bi *ModInt) isZero() bool {
 	return bi.v.Cmp(ZERO) == 0
 }
 
+func copyFromBytes(biBytes []byte, frozen bool, mod *big.Int) *ModInt {
+	newModInt := new(ModInt)
+	newModInt.v.SetBytes(biBytes)
+	newModInt.frozen = frozen
+	newModInt.m = mod
+	return newModInt
+}
+
 func CopyFrom(bi *big.Int, frozen bool, mod *big.Int) *ModInt {
 	if bi == nil {
 		return nil
 	}
-	newModInt := new(ModInt)
-	newModInt.v.SetBytes(bi.Bytes())
-	newModInt.frozen = frozen
-	newModInt.m = mod
-	return newModInt
+	return copyFromBytes(bi.Bytes(), frozen, mod)
 }
 
 func (bi *ModInt) copyUnfrozen() *ModInt {
@@ -138,6 +142,13 @@ func (bi *ModInt) Square() *ModInt {
 	return bi.modInternal(bi)
 }
 
+func (bi *ModInt) isSquare() bool {
+	if (bi.IsValEqual(MI_ZERO)) {
+		return true
+	}
+	return big.Jacobi(&bi.v, bi.m) == 1
+}
+
 func (bi *ModInt) sqrt() *ModInt {
 	// Int.ModSqrt implements  Tonelli-Shanks and also a more optimal version when modIn = 3 mod 4
 	// UGH! need to work around this bug: https://github.com/golang/go/issues/22265
@@ -161,6 +172,14 @@ func (bi *ModInt) Negate() *ModInt {
 		return MI_ONE.copyUnfrozen()
 	}
 	return CopyFrom(bi.m, false, bi.m).Sub(bi)
+}
+
+func (bi *ModInt) Pow(in *ModInt) *ModInt {
+	if bi.frozen {
+		bi = bi.copyUnfrozen()
+	}
+	bi.v.Exp(&bi.v, &in.v, bi.m)
+	return bi
 }
 
 func (bi *ModInt) String() string {
