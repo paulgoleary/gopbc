@@ -67,7 +67,11 @@ func CopyFrom(bi *big.Int, frozen bool, mod *big.Int) *ModInt {
 	if bi == nil {
 		return nil
 	}
-	return copyFromBytes(bi.Bytes(), frozen, mod)
+	newModInt := new(ModInt)
+	newModInt.v.Set(bi)
+	newModInt.frozen = frozen
+	newModInt.m = mod
+	return newModInt
 }
 
 func (bi *ModInt) copyUnfrozen() *ModInt {

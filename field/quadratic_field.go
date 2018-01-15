@@ -56,6 +56,8 @@ func (elem *D2ExtensionQuadElement) dup() *D2ExtensionQuadElement {
 	return newElem
 }
 
+// e0 = (x + y) * (x - y)
+// e1 = (xy) * 2
 func (elem *D2ExtensionQuadElement) Square() PointElement {
 	e0 := elem.dataX.Add(elem.dataY).Mul(elem.dataX.Sub(elem.dataY))
 	e1 := elem.dataX.Mul(elem.dataY).Mul(MI_TWO)
