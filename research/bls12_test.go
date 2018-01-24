@@ -5,6 +5,7 @@ import (
 	"math/big"
 	"math/bits"
 	"fmt"
+	"gopbc/field"
 )
 
 func hammingWeight( x *big.Int ) int {
@@ -94,7 +95,7 @@ func relicCalc(t0 *big.Int) *big.Int {
 	return p
 }
 
-func TestBLS12ParamGen(t *testing.T) {
+func TestBLS12Params(t *testing.T) {
 
 	testXString := "-d201000000010000"
 
@@ -143,5 +144,69 @@ func TestBLS12ParamGen(t *testing.T) {
 
 	if calcPString != testPString {
 		t.Errorf("Calc'd wrong value for P: want %s, got %s", testPString, calcPString)
+	}
+}
+
+func getCompatZField() *field.ZField {
+	fieldOrder := new(big.Int)
+	fieldOrder.SetString("1a0111ea397fe69a4b1ba7b6434bacd764774b84f38512bf6730d2a0f6b0f6241eabfffeb153ffffb9feffffffffaaab", 16)
+
+	testMod8 := new(big.Int).Mod(fieldOrder, big.NewInt(8))
+	field.Trace(testMod8)
+
+	return field.MakeZField(fieldOrder)
+}
+
+func TestBLS12Fields(t *testing.T) {
+
+	zfield := getCompatZField()
+	fieldOrder := zfield.FieldOrder
+
+	v0 := []big.Word {
+		15980986403153949556,
+		8312704975630804322,
+		14168571785075134642,
+		14165629176482031449,
+		7389832673998068853,
+		1781118126119810123	}
+
+	v1 := []big.Word {
+		17909906142013796791,
+		15686367500387818584,
+		16823448455851608339,
+		6081957736848945043,
+		9598562759131955863,
+		991220194111438160 }
+
+	p0 := field.MakeModIntWords(v0, true, fieldOrder)
+	p1 := field.MakeModIntWords(v1, true, fieldOrder)
+
+	qfield := field.MakeD2ExtensionQuadField(zfield)
+
+	testElem := qfield.MakeElement(p0, p1)
+
+	r0 := []big.Word {
+		14933914844065159370,
+		2122104236263514281,
+		4151227062241471315,
+		15249847645077438991,
+		10892634782589633608,
+		271899024200359973 }
+
+	r1 := []big.Word {
+		13878994217214973151,
+		10552726046066292122,
+		14454611607008347041,
+		15499325862293857853,
+		10393135513138888064,
+		1584683573066562359	}
+
+	resElem := qfield.MakeElement(
+		field.MakeModIntWords(r0, true, fieldOrder),
+		field.MakeModIntWords(r1, true, fieldOrder))
+
+	testSquare := testElem.Square()
+	if !testSquare.IsValEqual(resElem) {
+		t.Errorf("Failed to calc correct d2 field square operation: expect %s, got %s", resElem.String(), testSquare.String())
 	}
 }

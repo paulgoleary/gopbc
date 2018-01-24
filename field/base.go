@@ -36,6 +36,12 @@ func MakeModInt(x int64, frozen bool, mod *big.Int) *ModInt {
 	return &ModInt{ *big.NewInt(x), frozen, mod}
 }
 
+func MakeModIntWords(w []big.Word, frozen bool, mod *big.Int) *ModInt {
+	bi := new(big.Int)
+	bi.SetBits(w)
+	return &ModInt{ *bi, frozen, mod}
+}
+
 func MakeModIntStr(x string, frozen bool, mod *big.Int) *ModInt {
 	ret := big.Int{}
 	ret.SetString(x, 10)
