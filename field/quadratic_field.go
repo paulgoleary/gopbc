@@ -3,6 +3,7 @@ package field
 import (
 	"math/big"
 	"log"
+	"fmt"
 )
 
 type QuadraticField struct {
@@ -181,12 +182,39 @@ type D6ExtensionQuadField struct {
 	targetField *D2ExtensionQuadField
 }
 
+func MakeD6ExtensionQuadField(d2Ext *D2ExtensionQuadField) *D6ExtensionQuadField {
+
+	qfield := new(D6ExtensionQuadField)
+	qfield.targetField = d2Ext
+	qfield.FieldOrder = new(big.Int)
+	qfield.FieldOrder.Exp(qfield.targetField.FieldOrder, THREE, nil) // not so sure about this ... :/
+	qfield.LengthInBytes = qfield.targetField.LengthInBytes * 3
+
+	return qfield
+}
+
 // An element of Fq6, represented by c0 + c1 * v + c2 * v^(2).
 type D6ExtensionQuadElement struct {
 	ElemField *D6ExtensionQuadField
 	c0 PointElement
 	c1 PointElement
 	c2 PointElement
+}
+
+func (field *D6ExtensionQuadField) MakeElement(c0, c1, c2 PointElement) *D6ExtensionQuadElement {
+	elem := new(D6ExtensionQuadElement)
+	elem.ElemField = field
+	elem.c0 = c0
+	elem.c1 = c1
+	elem.c2 = c2
+	return elem
+}
+
+func (elem *D6ExtensionQuadElement) String() string {
+	return fmt.Sprintf("D6 elem: [%s,\n%s],\n[%s,\n%s],\n[%s,\n%s]",
+		elem.c0.X().String(), elem.c0.Y().String(),
+		elem.c1.X().String(), elem.c1.Y().String(),
+		elem.c2.X().String(), elem.c2.Y().String())
 }
 
 func (elem *D6ExtensionQuadElement) MulPoint(elemIn *D6ExtensionQuadElement) *D6ExtensionQuadElement {

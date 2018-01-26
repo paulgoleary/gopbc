@@ -150,14 +150,15 @@ func TestBLS12Params(t *testing.T) {
 func getCompatZField() *field.ZField {
 	fieldOrder := new(big.Int)
 	fieldOrder.SetString("1a0111ea397fe69a4b1ba7b6434bacd764774b84f38512bf6730d2a0f6b0f6241eabfffeb153ffffb9feffffffffaaab", 16)
-
-	testMod8 := new(big.Int).Mod(fieldOrder, big.NewInt(8))
-	field.Trace(testMod8)
-
 	return field.MakeZField(fieldOrder)
 }
 
 func TestBLS12Fields(t *testing.T) {
+	testD2MulCompat(t)
+	testD6MulCompat(t)
+}
+
+func testD2MulCompat(t *testing.T) {
 
 	zfield := getCompatZField()
 	fieldOrder := zfield.FieldOrder
@@ -209,4 +210,37 @@ func TestBLS12Fields(t *testing.T) {
 	if !testSquare.IsValEqual(resElem) {
 		t.Errorf("Failed to calc correct d2 field square operation: expect %s, got %s", resElem.String(), testSquare.String())
 	}
+}
+
+func testD6MulCompat(t *testing.T) {
+
+	zfield := getCompatZField()
+	fieldOrder := zfield.FieldOrder
+
+	d2field := field.MakeD2ExtensionQuadField(zfield)
+	d6field := field.MakeD6ExtensionQuadField(d2field)
+
+	aBits := [][]big.Word {
+		{0x01B6A3E375059E90, 0xAA8D9EB246EDFE57, 0x3D8D63ACA99041BD, 0x142EDA7E6D302B3E, 0x0D218D769D6EFEBE, 0x1DD95962F87655A1},
+		{0x0E4DAD2FA6BF6FB2, 0xA40F013005A3CE87, 0x201C9536067F1EDA, 0x289014F4BFB5D593, 0xEC97F12AAD184AE5, 0xE2EC1399B255A184},
+		{0x06094E21296EBAD8, 0x5D0C6207C82C9173, 0x86EACA537FE44AEA, 0xA044254B549835BF, 0x2817A10CAE069A53, 0x006B13E4173FAFC2},
+		{0x051AFDD5F166623A, 0x6B16363F60528512, 0xFD3645D67F09E01A, 0x7157A501760DCDF0, 0x5D0F5CBF3AB0156E, 0xF242B1DEE7592FC6},
+		{0x17C6BA91C4B272E6, 0xE37C6693355B0197, 0x8C8FA99B12B47AE7, 0xC84C0AEB02DFBD5A, 0xC5379FAE8D1FBAD6, 0x7C3EDFB568979DCA},
+		{0x18EC8049302B36A0, 0x94C36E460CE3FED6, 0x755A1968D3A397ED, 0x90278397D7124D8A, 0x9F9D23F1CEB0AA99, 0xB1AD412B43192E1D}}
+
+	aElem0 := d2field.MakeElement(
+		field.MakeModIntWords(aBits[0], true, fieldOrder),
+		field.MakeModIntWords(aBits[1], true, fieldOrder))
+
+	aElem1 := d2field.MakeElement(
+		field.MakeModIntWords(aBits[2], true, fieldOrder),
+		field.MakeModIntWords(aBits[3], true, fieldOrder))
+
+	aElem2 := d2field.MakeElement(
+		field.MakeModIntWords(aBits[4], true, fieldOrder),
+		field.MakeModIntWords(aBits[5], true, fieldOrder))
+
+	aElem := d6field.MakeElement(aElem0, aElem1, aElem2)
+	field.Trace(aElem)
+
 }
