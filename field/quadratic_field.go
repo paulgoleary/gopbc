@@ -93,7 +93,7 @@ func (qfield *D2ExtensionQuadField) ElemMul(elemA PointElement, elemB PointEleme
 
 func (qfield *D2ExtensionQuadField) ElemMulNor(elem PointElement) PointElement {
 	// TODO: don't necessarily need this check. but for now...
-	testMod8 := new(big.Int).Mod(qfield.FieldOrder, big.NewInt(8))
+	testMod8 := new(big.Int).Mod(qfield.targetField.FieldOrder, big.NewInt(8))
 	if testMod8.Cmp(THREE) != 0 {
 		log.Panicf("Currently only implemented for field order 3 % 8")
 	}
@@ -104,11 +104,11 @@ func (qfield *D2ExtensionQuadField) ElemMulNor(elem PointElement) PointElement {
 }
 
 func (qfield *D2ExtensionQuadField) ElemAdd(elemA PointElement, elemB PointElement) PointElement {
-	return qfield.MakeElement(elemA.X().Add(elemB.X()), elemB.X().Add(elemB.Y()))
+	return qfield.MakeElement(elemA.X().Add(elemB.X()), elemA.Y().Add(elemB.Y()))
 }
 
 func (qfield *D2ExtensionQuadField) ElemSub(elemA PointElement, elemB PointElement) PointElement {
-	return qfield.MakeElement(elemA.X().Sub(elemB.X()), elemB.X().Sub(elemB.Y()))
+	return qfield.MakeElement(elemA.X().Sub(elemB.X()), elemA.Y().Sub(elemB.Y()))
 }
 
 func (elem *D2ExtensionQuadElement) Pow(in *ModInt) PointElement {
@@ -210,6 +210,10 @@ func (field *D6ExtensionQuadField) MakeElement(c0, c1, c2 PointElement) *D6Exten
 	return elem
 }
 
+func (elem *D6ExtensionQuadElement) IsValEqual(elemIn *D6ExtensionQuadElement) bool {
+	return elem.c0.IsValEqual(elemIn.c0) && elem.c1.IsValEqual(elemIn.c1) && elem.c2.IsValEqual(elemIn.c2)
+}
+
 func (elem *D6ExtensionQuadElement) String() string {
 	return fmt.Sprintf("D6 elem: [%s,\n%s],\n[%s,\n%s],\n[%s,\n%s]",
 		elem.c0.X().String(), elem.c0.Y().String(),
@@ -223,31 +227,39 @@ func (elem *D6ExtensionQuadElement) MulPoint(elemIn *D6ExtensionQuadElement) *D6
 
 	// v0 = a_0 * b_0
 	v0 := targetField.ElemMul(elem.c0, elemIn.c0)
-	Trace(v0)
 
 	// v1 = a_1 * b_1
 	v1 := targetField.ElemMul(elem.c1, elemIn.c1)
-	Trace(v1)
 
 	// v2 = a_2 * b_2
 	v2 := targetField.ElemMul(elem.c2, elemIn.c2)
-	Trace(v2)
 
 	// t2 (c_0) = v0 + E((a_1 + a_2)(b_1 + b_2) - v1 - v2)
 	// (a_1 + a_2)
 	t0 := targetField.ElemAdd(elem.c1, elem.c2)
-	// (b_1 + b_2)
 	t1 := targetField.ElemAdd(elemIn.c1, elemIn.c2)
-	// (a_1 + a_2)(b_1 + b_2)
 	t2 := targetField.ElemMul(t0, t1)
-
 	t2 = targetField.ElemSub(t2, v1)
 	t2 = targetField.ElemSub(t2, v2)
-
-	// fp2_mul_nor(t0, t2);
 	t0 = targetField.ElemMulNor(t2)
-	// fp2_add(t2, t0, v0);
 	t2 = targetField.ElemAdd(t0, v0)
 
-	return nil
+	/* c_1 = (a_0 + a_1)(b_0 + b_1) - v0 - v1 + Ev2 */
+	t0 = targetField.ElemAdd(elem.c0, elem.c1)
+	t1 = targetField.ElemAdd(elemIn.c0, elemIn.c1)
+	c1 := targetField.ElemMul(t0, t1)
+	c1 = targetField.ElemSub(c1, v0)
+	c1 = targetField.ElemSub(c1, v1)
+	t0 = targetField.ElemMulNor(v2)
+	c1 = targetField.ElemAdd(c1, t0)
+
+	/* c_2 = (a_0 + a_2)(b_0 + b_2) - v0 + v1 - v2 */
+	t0 = targetField.ElemAdd(elem.c0, elem.c2)
+	t1 = targetField.ElemAdd(elemIn.c0, elemIn.c2)
+	c2 := targetField.ElemMul(t0, t1)
+	c2 = targetField.ElemSub(c2, v0)
+	c2 = targetField.ElemAdd(c2, v1)
+	c2 = targetField.ElemSub(c2, v2)
+
+	return elem.ElemField.MakeElement(t2, c1, c2)
 }

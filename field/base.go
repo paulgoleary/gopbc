@@ -193,7 +193,8 @@ func (bi *ModInt) Pow(in *ModInt) *ModInt {
 }
 
 func (bi *ModInt) String() string {
-	return bi.v.String()
+	// return bi.v.String()
+	return bi.v.Text(16)
 }
 
 type Field interface {}
