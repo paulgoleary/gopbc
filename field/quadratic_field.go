@@ -68,27 +68,12 @@ func (elem *D2ExtensionQuadElement) Square() PointElement {
 	return elem.ElemField.MakeElement(e0, e1)
 }
 
-/*
 func (elem *D2ExtensionQuadElement) MulPoint(elemIn PointElement) PointElement {
-	e2 := elem.dataX.Add(elem.dataY).Mul(elemIn.X().Add(elemIn.Y()))
-	e0 := elem.dataX.Mul(elemIn.X())
-	e1 := elem.dataY.Mul(elemIn.Y())
+	e2 := elem.X().Add(elem.Y()).Mul(elemIn.X().Add(elemIn.Y()))
+	e0 := elem.X().Mul(elemIn.X())
+	e1 := elem.Y().Mul(elemIn.Y())
 	e2 = e2.Sub(e0)
 	return elem.ElemField.MakeElement(e0.Sub(e1), e2.Sub(e1))
-}
-*/
-
-func (elem *D2ExtensionQuadElement) MulPoint(elemIn PointElement) PointElement {
-	return elem.ElemField.ElemMul(elem, elemIn)
-}
-
-// TODO: move elsewhere ...?
-func (qfield *D2ExtensionQuadField) ElemMul(elemA PointElement, elemB PointElement) PointElement {
-	e2 := elemA.X().Add(elemA.Y()).Mul(elemB.X().Add(elemB.Y()))
-	e0 := elemA.X().Mul(elemB.X())
-	e1 := elemA.Y().Mul(elemB.Y())
-	e2 = e2.Sub(e0)
-	return qfield.MakeElement(e0.Sub(e1), e2.Sub(e1))
 }
 
 func (qfield *D2ExtensionQuadField) ElemMulNor(elem PointElement) PointElement {
@@ -103,12 +88,12 @@ func (qfield *D2ExtensionQuadField) ElemMulNor(elem PointElement) PointElement {
 	return qfield.MakeElement(c0, c1)
 }
 
-func (qfield *D2ExtensionQuadField) ElemAdd(elemA PointElement, elemB PointElement) PointElement {
-	return qfield.MakeElement(elemA.X().Add(elemB.X()), elemA.Y().Add(elemB.Y()))
+func (elem *D2ExtensionQuadElement) Add(elemIn PointElement) PointElement {
+	return elem.ElemField.MakeElement(elem.X().Add(elemIn.X()), elem.Y().Add(elemIn.Y()))
 }
 
-func (qfield *D2ExtensionQuadField) ElemSub(elemA PointElement, elemB PointElement) PointElement {
-	return qfield.MakeElement(elemA.X().Sub(elemB.X()), elemA.Y().Sub(elemB.Y()))
+func (elem *D2ExtensionQuadElement) Sub(elemIn PointElement) PointElement {
+	return elem.ElemField.MakeElement(elem.X().Sub(elemIn.X()), elem.Y().Sub(elemIn.Y()))
 }
 
 func (elem *D2ExtensionQuadElement) Pow(in *ModInt) PointElement {
@@ -226,40 +211,40 @@ func (elem *D6ExtensionQuadElement) MulPoint(elemIn *D6ExtensionQuadElement) *D6
 	targetField := elem.ElemField.targetField
 
 	// v0 = a_0 * b_0
-	v0 := targetField.ElemMul(elem.c0, elemIn.c0)
+	v0 := elem.c0.MulPoint(elemIn.c0)
 
 	// v1 = a_1 * b_1
-	v1 := targetField.ElemMul(elem.c1, elemIn.c1)
+	v1 := elem.c1.MulPoint(elemIn.c1)
 
 	// v2 = a_2 * b_2
-	v2 := targetField.ElemMul(elem.c2, elemIn.c2)
+	v2 := elem.c2.MulPoint(elemIn.c2)
 
 	// t2 (c_0) = v0 + E((a_1 + a_2)(b_1 + b_2) - v1 - v2)
 	// (a_1 + a_2)
-	t0 := targetField.ElemAdd(elem.c1, elem.c2)
-	t1 := targetField.ElemAdd(elemIn.c1, elemIn.c2)
-	t2 := targetField.ElemMul(t0, t1)
-	t2 = targetField.ElemSub(t2, v1)
-	t2 = targetField.ElemSub(t2, v2)
+	t0 := elem.c1.Add(elem.c2)
+	t1 := elemIn.c1.Add(elemIn.c2)
+	t2 := t0.MulPoint(t1)
+	t2 = t2.Sub(v1)
+	t2 = t2.Sub(v2)
 	t0 = targetField.ElemMulNor(t2)
-	t2 = targetField.ElemAdd(t0, v0)
+	t2 = t0.Add(v0)
 
 	/* c_1 = (a_0 + a_1)(b_0 + b_1) - v0 - v1 + Ev2 */
-	t0 = targetField.ElemAdd(elem.c0, elem.c1)
-	t1 = targetField.ElemAdd(elemIn.c0, elemIn.c1)
-	c1 := targetField.ElemMul(t0, t1)
-	c1 = targetField.ElemSub(c1, v0)
-	c1 = targetField.ElemSub(c1, v1)
+	t0 = elem.c0.Add(elem.c1)
+	t1 = elemIn.c0.Add(elemIn.c1)
+	c1 := t0.MulPoint(t1)
+	c1 = c1.Sub(v0)
+	c1 = c1.Sub(v1)
 	t0 = targetField.ElemMulNor(v2)
-	c1 = targetField.ElemAdd(c1, t0)
+	c1 = c1.Add(t0)
 
 	/* c_2 = (a_0 + a_2)(b_0 + b_2) - v0 + v1 - v2 */
-	t0 = targetField.ElemAdd(elem.c0, elem.c2)
-	t1 = targetField.ElemAdd(elemIn.c0, elemIn.c2)
-	c2 := targetField.ElemMul(t0, t1)
-	c2 = targetField.ElemSub(c2, v0)
-	c2 = targetField.ElemAdd(c2, v1)
-	c2 = targetField.ElemSub(c2, v2)
+	t0 = elem.c0.Add(elem.c2)
+	t1 = elemIn.c0.Add(elemIn.c2)
+	c2 := t0.MulPoint(t1)
+	c2 = c2.Sub(v0)
+	c2 = c2.Add(v1)
+	c2 = c2.Sub(v2)
 
 	return elem.ElemField.MakeElement(t2, c1, c2)
 }

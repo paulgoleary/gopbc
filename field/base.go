@@ -217,6 +217,8 @@ type PointElement interface {
 	NegateY() PointElement
 	Invert() PointElement
 	MulPoint(PointElement) PointElement
+	Add(PointElement) PointElement
+	Sub(PointElement) PointElement
 	Square() PointElement
 	Pow(*ModInt) PointElement
 	IsValEqual(PointElement) bool

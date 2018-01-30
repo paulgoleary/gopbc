@@ -182,12 +182,21 @@ func (elem *CurveElement) NegateY() PointElement {
 }
 
 func (elem *CurveElement) Invert() PointElement {
-	return nil // TODO!
+	return nil // TODO!?
 }
 
 func (elem *CurveElement) Square() PointElement {
-	// TODO !
+	// TODO !?
 	return nil
+}
+
+// hmmm... getting regrettable to have to add these unused/stub methods...
+func (elem *CurveElement) Add(_ PointElement) PointElement {
+	return nil // TODO!?
+}
+
+func (elem *CurveElement) Sub(_ PointElement) PointElement {
+	return nil // TODO!?
 }
 
 func (elem *CurveElement) isInf() bool {
