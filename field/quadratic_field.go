@@ -125,6 +125,12 @@ type D2ExtensionQuadField struct {
 	QuadraticField
 }
 
+func (qfield *D2ExtensionQuadField) MakeElementInt(x *big.Int, y *big.Int) PointElement {
+	copyX := CopyFrom(x, true, qfield.targetField.FieldOrder)
+	copyY := CopyFrom(y, true, qfield.targetField.FieldOrder)
+	return qfield.MakeElement(copyX, copyY)
+}
+
 func (qfield *D2ExtensionQuadField) MakeElement(x *ModInt, y *ModInt) PointElement {
 	if x != nil {
 		x.Freeze()

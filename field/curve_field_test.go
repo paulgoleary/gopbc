@@ -26,7 +26,7 @@ func TestCurveSpec(t *testing.T) {
 	if !testElem1.frozen() {
 		t.Errorf("CurveElements should be frozen by default")
 	}
-	if testElem1.isInf() {
+	if testElem1.IsInf() {
 		t.Errorf("Element should have been created correctly and not be INF: %s", testElem1.String())
 	}
 

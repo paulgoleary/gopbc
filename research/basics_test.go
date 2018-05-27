@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"math/big"
 	"testing"
+	"crypto/sha256"
 )
 
 // val secretKeyVal = "276146606970621369032156664792541580771690346936"

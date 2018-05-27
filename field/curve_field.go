@@ -27,6 +27,9 @@ type CurveElement struct {
 
 // TODO: JPBC (PBC?) handles case w/o bytes and cofactor
 func (field *CurveField) initGenFromBytes(genNoCofacBytes []byte) {
+	if genNoCofacBytes == nil {
+		return
+	}
 	newGenNoCoFac := field.MakeElementFromBytes(genNoCofacBytes)
 	field.genNoCofac = newGenNoCoFac
 	field.gen = field.genNoCofac.MulScalar(field.cofactor)
@@ -103,6 +106,14 @@ func (field *CurveField) MakeElementFromHash(h []byte) *CurveElement {
 	return elem
 }
 
+func (field *CurveField) MakeElement(x *big.Int, y *big.Int) *CurveElement {
+	copyX := CopyFrom(x, true, field.getTargetField().FieldOrder)
+	copyY := CopyFrom(y, true, field.getTargetField().FieldOrder)
+	elem := CurveElement{&field.CurveParams, PointLike{copyX, copyY}}
+	elem.freeze()
+	return &elem
+}
+
 // TODO: needs to account for sign
 func (field *CurveField) MakeElementFromX(x *big.Int) *CurveElement {
 
@@ -173,7 +184,7 @@ func (elem *CurveElement) getTargetOrder() *big.Int {
 }
 
 func (elem *CurveElement) NegateY() PointElement {
-	if elem.isInf() {
+	if elem.IsInf() {
 		return &CurveElement{elem.elemParams, PointLike{nil, nil}}
 	}
 	elem.PointLike.freeze() // make sure we're frozen
@@ -182,7 +193,12 @@ func (elem *CurveElement) NegateY() PointElement {
 }
 
 func (elem *CurveElement) Invert() PointElement {
-	return nil // TODO!?
+	if elem.IsInf() {
+		return elem
+	}
+	elem.dataY = elem.dataY.Negate()
+	elem.dataY.Freeze()
+	return elem
 }
 
 func (elem *CurveElement) Square() PointElement {
@@ -190,18 +206,19 @@ func (elem *CurveElement) Square() PointElement {
 	return nil
 }
 
-// hmmm... getting regrettable to have to add these unused/stub methods...
-func (elem *CurveElement) Add(_ PointElement) PointElement {
-	return nil // TODO!?
+func (elem *CurveElement) Add(elemIn PointElement) PointElement {
+	return elem.MulPoint(elemIn)
 }
 
 func (elem *CurveElement) Sub(_ PointElement) PointElement {
 	return nil // TODO!?
 }
 
-func (elem *CurveElement) isInf() bool {
+/*
+func (elem *CurveElement) IsInf() bool {
 	return elem.dataY == nil && elem.dataY == nil
 }
+*/
 
 func (elem *CurveElement) setInf() {
 	elem.dataX = nil
@@ -210,7 +227,7 @@ func (elem *CurveElement) setInf() {
 
 // don't return elem to emphasize that call mutates elem
 func (elem *CurveElement) freeze() {
-	if elem.isInf() {
+	if elem.IsInf() {
 		return // already frozen by def
 	}
 	elem.PointLike.freeze()
@@ -218,7 +235,7 @@ func (elem *CurveElement) freeze() {
 }
 
 func (elem *CurveElement) frozen() bool {
-	if (elem.isInf()) {
+	if (elem.IsInf()) {
 		return true
 	}
 	return elem.PointLike.frozen()
@@ -250,7 +267,7 @@ func validateModulo( mod1 *big.Int, mod2 *big.Int) {
 
 func (elem *CurveElement) isValid() bool {
 
-	if elem.isInf() {
+	if elem.IsInf() {
 		return true
 	}
 
@@ -332,11 +349,11 @@ func (elem *CurveElement) mul(elemIn *CurveElement) *CurveElement {
 		panic("elemIn param must be frozen")
 	}
 
-	if elem.isInf() {
+	if elem.IsInf() {
 		return elemIn
 	}
 
-	if elemIn.isInf() {
+	if elemIn.IsInf() {
 		return elem
 	}
 

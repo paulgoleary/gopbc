@@ -193,8 +193,8 @@ func (bi *ModInt) Pow(in *ModInt) *ModInt {
 }
 
 func (bi *ModInt) String() string {
-	// return bi.v.String()
-	return bi.v.Text(16)
+	return bi.v.String()
+	// return bi.v.Text(16)
 }
 
 type Field interface {}
@@ -234,8 +234,15 @@ type PointLike struct {
 	dataY *ModInt
 }
 
+func (p *PointLike) IsInf() bool {
+	return p.dataY == nil && p.dataY == nil
+}
+
 // TODO: get at base type name ?
 func (p *PointLike) String() string {
+	if p.IsInf() {
+		return "[INF]"
+	}
 	return fmt.Sprintf("PointLike: [%s,\n%s]", p.dataX.String(), p.dataY.String())
 }
 

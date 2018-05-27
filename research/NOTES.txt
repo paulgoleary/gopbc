@@ -1,0 +1,21 @@
+What am I trying to do now? Where is this all at?
+
+. Recent research + coding has been on the BLS12-381 curve contruct that the ZCASH folks have identified as being particularly interesting for their purposes.
+. In particular, BLS12-381 is thought to have better security properties WRT their current setup and recent advances in crypt-analysis of other curves
+.. See https://z.cash/blog/new-snark-curve.html
+. The same motivation - ie. better security - makes it a good candidate in general for pairing-based cryptosystems.
+. Moreover, seems like a worthy goal for development to coalesce around standard curves. This point was noted indirectly by the DFINITY (?) folks.
+
+. The higher-order extension field of BLS12-381 is built on a tower of lower-order (factor?) extension fields
+.. specifically, D2 -> D6 (3xD2) -> D12 (2XD6, so really 6X2D) with specific polynomial def'ns in between
+
+. Recent research + coding has shown that it should be relativity straight-forward to build the same infrastructure into this project.
+. Goal would be to demonstrate basic pairing-based-crypto systems - including AFGH proxy-re-encryption - with the more sophisticated curve
+.. interesting to stuff performance, etc. from there.
+. To that end, would also be faster and more efficient to follow the approach of ZCASH and build a fairly-specific implementation of BLS-381
+.. that is, unlike RELIC or even PBC/JPBC that aims to be more general purpose
+
+TODO:
+. minimal operations to support Miller function on D12 extension field
+.. by inference then D6 and D12 since current D2 extension appears to be compatible with BLS12-381 requirements
+. MORE TODO!
