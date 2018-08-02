@@ -2,7 +2,7 @@ package crypto
 
 import (
 	"testing"
-	"gopbc/pairing"
+	"github.com/paulgoleary/gopbc/pairing"
 	"crypto/sha256"
 )
 

@@ -2,7 +2,7 @@ package pairing
 
 import (
 	"math/big"
-	"gopbc/field"
+	"github.com/paulgoleary/gopbc/field"
 )
 
 type GTFiniteField struct {

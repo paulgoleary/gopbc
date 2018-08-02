@@ -2,7 +2,7 @@ package pairing
 
 import (
 	"fmt"
-	"gopbc/field"
+	"github.com/paulgoleary/gopbc/field"
 	"math/big"
 	"log"
 )

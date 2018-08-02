@@ -1,7 +1,7 @@
 package pairing
 
 import (
-	"gopbc/field"
+	"github.com/paulgoleary/gopbc/field"
 	"log"
 	"math/big"
 	"time"

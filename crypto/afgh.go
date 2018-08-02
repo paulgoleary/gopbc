@@ -1,8 +1,8 @@
 package crypto
 
 import (
-	"gopbc/pairing"
-	"gopbc/field"
+	"github.com/paulgoleary/gopbc/pairing"
+	"github.com/paulgoleary/gopbc/field"
 	"log"
 )
 
